@@ -81,7 +81,7 @@ return if Rails.env.test?
 
 Rails.application.config.action_mailer.asset_host            = ENV['APP_HOST']
 Rails.application.config.action_mailer.perform_deliveries    = true
-Rails.application.config.action_mailer.default_options       = { from: "#{ENV['APP_NAME']} <no-reply@wakuwaku.today>" }
+Rails.application.config.action_mailer.default_options       = { from: "#{ENV['APP_NAME']} <no-reply@domain.com>" }
 Rails.application.config.action_mailer.delivery_method       = Rails.env.development? ? :letter_opener : :aws_sdk
 Rails.application.config.action_mailer.default_url_options   = { host: ENV['APP_DOMAIN'], protocol: ENV['PROTOCOL'] }
 Rails.application.config.action_mailer.raise_delivery_errors = Rails.env.development?
