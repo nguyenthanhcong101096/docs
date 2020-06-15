@@ -2,6 +2,6 @@
   "docs": {
     "Code documents": ["ruby_style", "cap", "mina"],
     "Devops": ["docker", "ansible", "vagrant"],
-    "Aws": ["elb", "vpc", "lambda"]
+    "Aws": ["elb", "vpc", "ses", "lambda"]
   }
 }
