@@ -1,15 +1,15 @@
 version: '3' 
 services:  
   react:
-    image: 570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/react
+    container_name: react
     build:      
       context: .
       dockerfile: Dockerfile-APP
   web:
-    image: 570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/nginx
     build:      
       context: .
       dockerfile: Dockerfile-NGINX
+    container_name: nginx
     links:      
       - react  
     ports:      

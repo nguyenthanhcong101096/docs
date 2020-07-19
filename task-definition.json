@@ -1,0 +1,31 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "nginx",
+      "image": "570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/nginx",
+      "memory": "256",
+      "cpu": "256",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": "80",
+          "protocol": "tcp"
+        }
+      ],
+      "links": [
+        "react"
+      ]
+    },
+    {
+      "name": "react",
+      "image": "570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/react",
+      "memory": "256",
+      "cpu": "256",
+      "essential": true
+    }
+  ],
+  "volumes": [],
+  "networkMode": "bridge",
+  "placementConstraints": [],
+  "family": "application-stack"
+}
