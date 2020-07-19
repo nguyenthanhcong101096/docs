@@ -1,4 +1,4 @@
-FROM nginx
+FROM nginx AS web
 
 RUN apt-get update -qq && apt-get -y install apache2-utils
 
