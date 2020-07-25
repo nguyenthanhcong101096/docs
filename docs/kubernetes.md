@@ -9,7 +9,7 @@ sidebar_label: Kubernetes
 ## 1. Khái niệm
 Kubernetes là dự án mã nguồn dể quản lý các container, automating deployment, scaling and manegement các ứng dụng trên container. (Tạo xóa sửa xếp lịch, scale trên nhiều máy) 
 
-### 1.1 Pod
+### [1.1 Pod](https://xuanthulab.net/tim-hieu-ve-pod-va-node-trong-kubernetes.html)
 - Pod là 1 nhóm các container chứa ứng gdụn cùng chia sẽ acsc tài gnuyên lưu trữ, địa chỉ IP...
 - Pod có thể chạy theo 2 cách sau:
   - Pod that run a single container: 1 container tương ứng 1 Pod
@@ -17,7 +17,12 @@ Kubernetes là dự án mã nguồn dể quản lý các container, automating d
 - Pods cung cấp hai loại tài nguyên chia sẻ cho các containers: networking và storage.
 - Pods nằm trong các woker nodes là nơi chứa các container (một hay nhiều). Mỗi pods giống như một logic machine riêng biệt (có IP, hostname, tiếng trình riêng).
 
-![](https://images.viblo.asia/eaab70cc-fb2a-4c98-b821-e1aa285019fe.png)
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes018.png)
+
+> Kubernetes không chạy các container một cách trực tiếp, thay vào đó nó bọc một hoặc vài container vào với nhau trong một cấu trúc gọi là POD.
+
+
+**Mạng / Volume với POD**
 
 - **Networking**: Mỗi pod sẽ được cấp 1 địa chỉ ip. Các container trong cùng 1 Pod cùng chia sẽ network namespace (địa chỉ ip và port). Các container trong cùng pod có thể giao tiếp với nhau và có thể giao tiếp với các container ở pod khác (use the shared network resources).
 - **Storage**: Pod có thể chỉ định một shared storage volumes. Các container trong pod có thể truy cập vào volume này.
@@ -104,6 +109,121 @@ Khác với file yml cấu hình pods ở phần trên một chút. Ở phần m
 Sau khi create pods bằng lệnh kubectl create -f, chúng ta dùng lệnh:
 
 `kubectl get po --show-labels`
+
+#### Lệnh kubectl tương tác với Cluster, cú pháp chính
+
+`kubectl [command] [TYPE] [NAME] [flags]`
+
+Trong đó:
+
+```
+[command] là lệnh, hành động như apply, get, delete, describe ...
+[TYPE] kiểu tài nguyên như ns, no, po, svc ...
+[NAME] tên đối tượng lệnh tác động
+[flags] các thiết lập, tùy thuộc loại lệnh
+```
+
+Danh sách các Node trong Cluster
+
+`kubectl get nodes`
+
+Thông tin chi tiết về Node có tên name-node
+
+`kubectl describe node name-node`
+
+Nhãn của Node
+
+`kubectl label node myNode tennhan=giatrinhan`
+
+Lấy các tài nguyên có nhãn nào đó
+
+`kubectl get node -l "tennhan=giatrinhan"`
+
+Xóa nhãn
+
+`kubectl label node myNode tennhan-`
+
+Liệt kê các POD trong namespace hiện tại
+> Thêm tham số -o wide hiện thị chi tiết hơn, thêm -A hiện thị tất cả namespace, thêm -n namespacename hiện thị Pod của namespace namespacename
+
+`kubectl get pods`
+
+Xem cấu trúc mẫu định nghĩa POD trong file cấu hình yaml
+
+`kubectl explain pod --recursive=true`
+
+Triển khai tạo các tài nguyên định nghĩa trong file firstpod.yaml
+
+`kubectl apply -f firstpod.yaml`
+
+Xóa các tài nguyên tạo ra từ định nghĩa firstpod.yaml
+
+`kubectl delete -f firstpod.yaml`
+
+Lấy thông tin chi tiết POD có tên namepod, nếu POD trong namespace khác mặc định thêm vào tham số -n namespace-name
+
+`kubectl describe pod/namepod`
+
+Xem logs của POD có tên podname
+
+`kubectl logs pod/podname`
+
+Chạy lệnh từ container của POD có tên mypod, nếu POD có nhiều container thêm vào tham số -c và tên container
+
+`kubectl exec mypod command`
+
+Chạy lệnh bash của container trong POD mypod và gắn terminal
+> Chú ý, nếu pod có nhiều container bên trong, thì cần chỉ rõ thi hành container nào bên trong nó bằng tham số -c containername
+
+`kubectl exec -it mypod bash`
+
+Tạo server proxy truy cập đến các tài nguyên của Cluster. `http://localhost/api/v1/namespaces/default/pods/mypod:8085/proxy/,` truy cập đến container có tên mypod trong namespace mặc định.
+
+`kubectl proxy`
+
+Xóa POD có tên mypod
+
+`kubectl delete pod/mypod`
+
+Truy cập Pod từ bên ngoài Cluster
+> Trong thông tin của Pod ta thấy có IP của Pod và cổng lắng nghe, tuy nhiên Ip này là nội bộ, chỉ các Pod trong Cluster liên lạc với nhau. Nếu bên ngoài muốn truy cập cần tạo một Service để chuyển traffic bên ngoài vào Pod (tìm hiểu sau), tại đây để debug - truy cập kiểm tra bằng cách chạy proxy
+
+```
+kubectl proxy
+kubectl proxy --address="0.0.0.0" --accept-hosts='^*$'
+
+Truy cập đến địa chỉ http://localhost/api/v1/namespaces/default/pods/mypod:8085/proxy/
+```
+
+Khi kiểm tra chạy thử, cũng có thể chuyển cổng để truy cập. Ví dụ cổng host 8080 được chuyển hướng truy cập đến cổng 8085 của POD mypod
+
+`kubectl port-forward mypod 8080:8085`
+
+#### Cấu hình thăm dò Container còn sống
+Bạn có thể cấu hình livenessProbe cho mỗi container, để Kubernetes kiểm tra xem container còn sống không. Ví dụ, đường dẫn kiểm tra là /healthycheck, nếu nó trả về mã header trong khoảng 200 đến 400 được coi là sống (tất nhiên bạn cần viết ứng dụng trả về mã này). Trong đó cứ 10s kiểm tra một lần
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+  labels:
+    app: mypod
+spec:
+  containers:
+  - name: mycontainer
+    image: ichte/swarmtest:php
+    ports:
+    - containerPort: 8085
+    resources: {}
+
+    livenessProbe:
+      httpGet:
+        path: /healthycheck
+        port: 8085
+      initialDelaySeconds: 10
+      periodSeconds: 10
+```
 
 ### 1.2 Replication Controllers
 - Replication controller đảm bảo rằng số lượng các pod replicas đã định nghĩa luôn luôn chạy đủ số lượng tại bất kì thời điểm nào.
