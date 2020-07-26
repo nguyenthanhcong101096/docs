@@ -9,6 +9,43 @@ sidebar_label: Kubernetes
 ## 1. Khái niệm
 Kubernetes là dự án mã nguồn dể quản lý các container, automating deployment, scaling and manegement các ứng dụng trên container. (Tạo xóa sửa xếp lịch, scale trên nhiều máy) 
 
+### Cài đặt Kubernetes Dashboard On mac
+
+[Tham khảo](https://medium.com/backbase/kubernetes-in-local-the-easy-way-f8ef2b98be68)
+
+```
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-rc3/aio/deploy/recommended.yaml
+
+kubectl proxy
+```
+
+Now access you can access Dashboard at:
+
+```
+http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/
+```
+
+You will see the following screen:
+
+![](https://miro.medium.com/max/1400/1*Y-Y2_S25E2KieRB1sNVqWA.png)
+
+To find a valid token here you have a useful one-liner
+
+```
+> kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | awk '/^deployment-controller-token-/{print $1}') | awk '$1=="token:"{print $2}'
+
+eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJkZXBsb3ltZW50LWNvbnRyb2xsZXItdG9rZW4tZnp3NzgiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVwbG95bWVudC1jb250cm9sbGVyIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiOWJmOGE4ZDAtZDg1Ny00YzBlLThmNzktZDk3MDEyZDBjMjU5Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50Omt1YmUtc3lzdGVtOmRlcGxveW1lbnQtY29udHJvbGxlciJ9.H_6nQYQ1ltSHUTddNgUjpRHKe82hC-ipL0S_08lK90rWE0hZir9fq1H9LhEyjSgt3QVIYCEiG8qiIqkQO0I2dvQN_CbQHnLl6dmhlrn7astFdu2F621plNQaC6MHfL5YTsTfJEER2sx5qDuEgtZXobWQ8-64w2d6RfHEIFZIxmno8Oj7XccjfBv12p74qyleJYIOBSuglaHyOx8RaDROCkW0OR-9DHa4zlcU28YqW83J3ynxjwqPvu_QzUc5xcycUk1nEfjWZORjH9A1D_Qdj5DNud7g1Pa_HHQZ50LBjIWKmwNLF7CSA-__goCPfWFfcC_gHANhFAfGYeU5sKWz9g
+```
+
+Copy & paste that token into the field and click Sign In to login, the dashboard will show as below:
+
+![](https://miro.medium.com/max/1400/1*LWAiiOJMuMsLkN6S36llDg.png)
+
+
+Now, let us go back to the Dashboard and get to the Pods via the Pods link in the Workloads as shown below:
+
+![](https://miro.medium.com/max/1400/1*ce98Pun7cZMLU9tSXSncAw.png)
+
 ### 1.1 Pod
 - [Tham khảo](https://xuanthulab.net/tim-hieu-ve-pod-va-node-trong-kubernetes.html)
 
