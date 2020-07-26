@@ -282,6 +282,7 @@ Gần như ngay lập tức sẽ có 1 Pods mới được tạo thành thay th�
 ![](https://images.viblo.asia/1230c5f1-6ea9-4169-bf7d-e4ccb1ee2629.png)
 
 ### 1.3 Services
+- [Tham khảo](https://xuanthulab.net/su-dung-service-va-secret-tls-trong-kubernetes.html)
 - Vì pod có tuổi thọ ngắn nên không đảm bảo về địa chỉ IP mà chúng được cung cấp.
 - Service là khái niệm được thực hiện bởi : domain name, và port. Service sẽ tự động "tìm" các pod được đánh label phù hợp (trùng với label của service), rồi chuyển các connection tới đó.
 - Nếu tìm được 5 pods thoả mã label, service sẽ thực hiện load-balancing: chia connection tới từng pod theo chiến lược được chọn (VD: round-robin: lần lượt vòng tròn).
@@ -422,7 +423,414 @@ $ kubectl get svc kubia-loadbalancer
 NAME               CLUSTER-IP      EXTERNAL-IP     PORT(S) AGE
 kubia-loadbalancer 10.111.241.153  130.211.53.173  80:32143/TCP 1m
 ```
+----------------------
+#### Tạo Service Kubernetes
 
+Tạo Service kiểu ClusterIP, không Selector
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc1
+spec:
+  type: ClusterIP
+  ports:
+    - name: port1
+      port: 80
+      targetPort: 80
+```
+
+File trên khai báo một service đặt tên svc1, kiểu của service là ClusterIP, đây là kiểu mặc định `(ngoài ra còn có kiểu NodePort, LoadBalancer, ExternalName)`, phần khai báo cổng gồm có cổng của service (port) tương ứng ánh xạ vào cổng của endpoint (`targetPort - thường là cổng Pod`).
+
+Triển khai file trên
+
+```
+kubectl apply -f 1.svc1.yaml
+
+# lấy các service
+kubectl get svc -o wide
+
+# xem thông tin của service svc1
+kubectl describe svc/svc1
+```
+
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes054.png)
+
+Hệ thống đã tạo ra service có tên là svc1 với địa chỉ IP là 10.97.217.42, khi Pod truy cập địa chỉ IP này với cổng 80 thì nó truy cập đến các endpoint định nghĩa trong dịch vụ. Tuy nhiên thông tin service cho biết phần endpoints là không có gì, có nghĩa là truy cập thì không có phản hồi nào.
+
+----------------------
+
+#### Tạo EndPoint cho Service (không selector)
+Service trên có tên `svc1`, không có `selector` để xác định các Pod là endpoint của nó, nên có thể tự tạo ra một endpoint cùng tên `svc1`
+
+```
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: svc1
+subsets:
+  - addresses:
+      - ip: 216.58.220.195      # đây là IP google
+    ports:
+      - name: port1
+        port: 80
+```
+
+Triển khai với lệnh
+
+`kubectl apply -f 2.endpoint.yaml`
+
+Xem lại thông tin
+```
+kubectl describe svc/svc1
+
+Name:              svc1
+Namespace:         default
+Labels:            <none>
+Annotations:       kubectl.kubernetes.io/last-applied-configuration: ...
+Selector:          <none>
+Type:              ClusterIP
+IP:                10.97.217.42
+Port:              port1  80/TCP
+TargetPort:        80/TCP
+Endpoints:         216.58.220.195:80
+Session Affinity:  None
+Events:            <none>
+```
+
+Như vậy svc1 đã có endpoints, khi truy cập `svc1:80` hoặc `svc1.default:80` hoặc `10.97.217.42:80` có nghĩa là truy cập `216.58.220.195:80`
+
+----------------------
+#### Thực hành tạo Service có Selector, chọn các Pod là Endpoint của Service
+Trước tiên triển khai trên Cluster 2 POD chạy độc lập, các POD đó đều có nhãn app: app1
+
+`3.pods.yaml`
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp1
+  labels:
+    app: app1
+spec:
+  containers:
+  - name: n1
+    image: nginx
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+    ports:
+      - containerPort: 80
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp2
+  labels:
+    app: app1
+spec:
+  containers:
+  - name: n1
+    image: httpd
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+    ports:
+```
+
+Triển khai file trên
+
+`kubectl apply -f 3.pods.yaml`
+
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes055.png)
+
+Nó tạo ra 2 POD `myapp1 (192.168.41.147 chạy nginx)` và `myapp2 (192.168.182.11 chạy httpd)`, chúng đều có nhãn `app=app1`
+
+Tiếp tục tạo ra service có tên `svc2` có thêm thiết lập `selector`chọn nhãn `app=app1`
+
+`4.svc2.yaml`
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc2
+spec:
+  selector:
+     app: app1
+  type: ClusterIP
+  ports:
+    - name: port1
+      port: 80
+      targetPort: 80
+```
+
+Triển khai và kiểm tra
+
+```
+$ 04-svc $ kubectl apply -f 4.svc2.yaml
+service/svc2 created
+
+$ 04-svc $ kubectl describe svc/svc2
+Name:              svc2
+Namespace:         default
+Labels:            <none>
+Annotations:       kubectl.kubernetes.io/last-applied-configuration: ...
+Selector:          app=app1
+Type:              ClusterIP
+IP:                10.100.165.105
+Port:              port1  80/TCP
+TargetPort:        80/TCP
+Endpoints:         192.168.182.11:80,192.168.41.147:80
+Session Affinity:  None
+Events:            <none>
+```
+
+Thông tin trên ta có, endpoint của svc2 là `192.168.182.11:80,192.168.41.147:80`, hai IP này tương ứng là của 2 POD trên. Khi truy cập địa chỉ svc2:80 hoặc `10.100.165.105:80` thì căn bằng tải hoạt động sẽ là truy cập đến `192.168.182.11:80` (myapp1) hoặc `192.168.41.147:80` (myapp2)
+
+----------------------
+#### Thực hành tạo Service kiểu NodePort
+Kiểu NodePort này tạo ra có thể truy cập từ ngoài internet bằng IP của các Node, ví dụ sửa dịch vụ svc2 trên thành dịch vụ svc3 kiểu NodePort
+
+`5.svc3.yaml`
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc3
+spec:
+  selector:
+     app: app1
+  type: NodePort
+  ports:
+    - name: port1
+      port: 80
+      targetPort: 80
+      nodePort: 31080
+```
+
+Trong file trên, thiết lập kiểu với `type: NodePort`, lúc này Service tạo ra có thể truy cập từ các IP của Node với một cổng nó ngẫu nhiên sinh ra trong khoảng `30000-32767`. Nếu muốn ấn định một cổng của Service mà không để ngẫu nhiên thì dùng tham số nodePort như trên.
+
+Triển khai file trên
+
+`kubectl appy -f 5.svc3.yaml`
+
+Sau khi triển khai có thể truy cập với IP là địa chỉ IP của các Node và cổng là 31080, ví dụ 172.16.10.101:31080
+
+----------------------
+#### Ví dụ ứng dụng Service, Deployment, Secret
+Trong ví dụ này, sẽ thực hành triển khai chạy máy chủ nginx với mức độ áp dụng phức tạp hơn đó là
+
+- Xây dựng một image mới từ image cơ sở nginx rồi đưa lên `registry` - Hub Docker đặt tên là `ichte/swarmtest:nginx`
+- Tạo Secret chứa xác thực SSL sử dụng bởi `ichte/swarmtest:nginx`
+- Tạo deployment chạy/quản lý các POD có chạy `ichte/swarmtest:nginx`
+- Tạo Service kiểu NodePort để truy cập đến các POD trên
+
+
+**Xây dựng image ichte/swarmtest:nginx**
+
+Image cơ sở là nginx (chọn tag bản 1.17.6), đây là một proxy nhận các yêu cầu gửi đến. Ta sẽ cấu hình để nó nhận các yêu cầu http (cổng 80) và https (cổng 443).
+
+Tạo ra thư mục nginx để chứa các file dữ liệu, đầu tiên là tạo ra file cấu hình nginx.conf, file cấu hình này được copy vào image ở đường dẫn /etc/nginx/nginx.conf khi build image.
+
+1 Chuẩn bị file cấu hình nginx.conf
+
+```
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+events {
+  worker_connections  4096;  ## Default: 1024
+}
+
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    keepalive_timeout  65;
+    #gzip  on;
+    server {
+        listen 80;
+        server_name localhost;                    # my-site.com
+        root  /usr/share/nginx/html;
+    }
+    server {
+        listen  443 ssl;
+        server_name  localhost;                   # my-site.com;
+        ssl_certificate /certs/tls.crt;           # fullchain.pem
+        ssl_certificate_key /certs/tls.key;       # privkey.pem
+        root /usr/share/nginx/html;
+    }
+}
+
+```
+
+2. File html
+
+```
+<!DOCTYPE html>
+<html>
+<head><title>Nginx -  Test!</title></head>
+<body>
+    <h1>Chạy Nginx trên Kubernetes</h1>    
+</body>
+</html>
+```
+
+3. Xây dựng image mới
+
+```
+FROM nginx:1.17.6
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY index.html /usr/share/nginx/html/index.html
+```
+
+Build thành Image mới đặt tên là `ichte/swarmtest:nginx` (đặt tên theo tài khoản của bạn trên Hub Docker, hoặc theo cấu trúc Registry riêng nếu sử dụng) và push Image nên Docker Hub
+
+```
+# build image từ Dockerfile, đặt tên image mới là ichte/swarmtest:nginx
+docker build -t ichte/swarmtest:nginx -f Dockerfile .
+
+# đẩy image lên hub docker
+docker push ichte/swarmtest:nginx
+```
+
+#### Tạo Deployment triển khai các Pod chạy ichte/swarmtest:nginx
+
+`6.nginx.yaml`
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: ichte/swarmtest:nginx
+        imagePullPolicy: "Always"
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+```
+
+Khi triển khai file này, có lỗi tạo container vì trong cấu hình có thiết lập SSL (server lắng nghe cổng 443) với các file xác thực ở đường dẫn /certs/tls.crt, /certs/tls.key nhưng hiện tại file này không có, ta sẽ sinh hai file này và đưa vào qua Secret
+
+#### Tự sinh xác thực với openssl
+Xác thực SSL gồm có `server certificate và private key`, đối với nginx cấu hình qua hai thiết lập `ssl_certificate và ssl_certificate_key` tương ứng ta đã cấu hình là hai `file tls.crt, tls.key.` Ta để tên này vì theo cách đặt tên của letsencrypt.org, sau này bạn có thể thận tiện hơn nếu xin xác thực miễn phí từ đây.
+
+Thực hiện lệnh sau để sinh file tự xác thực
+
+```
+openssl req -nodes -newkey rsa:2048 -keyout tls.key  -out ca.csr -subj "/CN=xuanthulab.net"
+openssl x509 -req -sha256 -days 365 -in ca.csr -signkey tls.key -out tls.crt
+```
+
+Đến đây có 2 file `tls.key và tls.crt`
+
+#### Tạo Secret tên secret-nginx-cert chứa các xác thực
+Thi hành lệnh sau để tạo ra một Secret (loại ổ đĩa chứa các thông tin nhạy cảm, nhỏ), Secret này kiểu tls, tức chứa xác thức SSL
+
+`kubectl create secret tls secret-nginx-cert --cert=certs/tls.crt  --key=certs/tls.key`
+
+Secret này tạo ra thì mặc định nó đặt tên file là tls.crt và tls.key có thể xem với lệnh
+
+`kubectl describe secret/secret-nginx-cert`
+
+#### Sử dụng Secret cho Pod
+Đã có Secret, để POD sử dụng được sẽ cấu hình nó như một ổ đĩa đê Pod đọc, sửa lại Deployment 6.nginx.yaml như sau:
+
+`6.nginx.yaml`
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec: 
+      volumes:
+        - name: cert-volume
+          secret:
+             secretName: "secret-nginx-cert" 
+      containers:
+      - name: nginx
+        image: ichte/swarmtest:nginx
+        imagePullPolicy: "Always"
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        ports:
+        - containerPort: 80
+        - containerPort: 443 
+        volumeMounts:
+          - mountPath: "/certs"
+            name: cert-volume 
+```
+
+#### Tạo Service truy cập kiểu NodePort
+
+Thêm vào cuỗi file `6.nginx.yaml`
+```
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-nginx
+spec:
+  type: NodePort
+  ports:
+  - port: 8080        # cổng dịch vụ ánh xạ vào cổng POD
+    targetPort: 80    # cổng POD ánh xạ vào container
+    protocol: TCP
+    name: http
+    nodePort: 31080   # cổng NODE ánh xạ vào cổng dịch vụ (chỉ chọn 30000-32767)
+
+  - port: 443
+    targetPort: 443
+    protocol: TCP
+    name: https
+    nodePort: 31443
+  # Chú ý đúng với Label của POD tại Deployment
+  selector:
+    app: nginx
+```
+
+Giờ có thể truy cập từ địa chỉ IP của Node với cổng tương ứng (Kubernetes Docker thì http://localhost:31080 và https://localhost:31443)
+
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes030.png)
+
+----------------------
 ### 1.4 Volumes 
 Như chúng ta đã biết, hệ thống Kubermetes sẽ tạo ra Pods mới thay thế khi một Pods bị lỗi, chết hay crash. Vậy còn dữ liệu được lưu trong Pods cũ sẽ đi đâu ? Pods mới có lấy lại được dữ liệu của Pods cũ đã mất để tiếp tục sử dụng không ? Khái niệm Voulumes sẽ giúp giải quyết các vấn đề trên.
 
