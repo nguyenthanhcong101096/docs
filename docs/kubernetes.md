@@ -9,7 +9,9 @@ sidebar_label: Kubernetes
 ## 1. Khái niệm
 Kubernetes là dự án mã nguồn dể quản lý các container, automating deployment, scaling and manegement các ứng dụng trên container. (Tạo xóa sửa xếp lịch, scale trên nhiều máy) 
 
-### [1.1 Pod](https://xuanthulab.net/tim-hieu-ve-pod-va-node-trong-kubernetes.html)
+### 1.1 Pod
+- [Tham khảo](https://xuanthulab.net/tim-hieu-ve-pod-va-node-trong-kubernetes.html)
+
 - Pod là 1 nhóm các container chứa ứng gdụn cùng chia sẽ acsc tài gnuyên lưu trữ, địa chỉ IP...
 - Pod có thể chạy theo 2 cách sau:
   - Pod that run a single container: 1 container tương ứng 1 Pod
