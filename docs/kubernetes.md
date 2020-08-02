@@ -211,7 +211,7 @@ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
 
-Tiếp đó, nó yêu cầu cài đặt một Plugin mạng trong các Plugin tại addon, ở đây đã chọn calico, nên chạy lệnh sau để cài nó
+Tiếp đó, nó yêu cầu cài đặt một Plugin mạng trong các Plugin tại [addon](https://kubernetes.io/docs/concepts/cluster-administration/addons/), ở đây đã chọn calico, nên chạy lệnh sau để cài nó
 
 ```
 kubectl apply -f https://docs.projectcalico.org/v3.10/manifests/calico.yaml
@@ -232,6 +232,66 @@ kubectl get pods -A
 
 Vậy là đã có Cluster với 1 node!
 
+#### Kết nối Node vào Cluster
+Hãy vào máy node master (bằng SSH `ssh root@172.16.10.100`). Thực hiện lệnh sau với Cluster để lấy lệnh kết nối
+
+`kubeadm token create --print-join-command`
+
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes008.png)
+
+Nó cho nội dung lệnh kubeadm join ... thực hiện lệnh này trên các node worker thì node worker sẽ nối vào Cluster
+
+SSH vào máy `worker1, worker2` và thực hiện kết nối
+
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes009.png)
+
+Giờ kiểm tra các node có trong Cluster
+
+`kubectl get nodes`
+
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes010.png)
+
+> Đến đây bạn đã biết khởi tạo một Cluster từ Docker Destop hay một Cluster phức tạp 3 node thực thụ, tuy nhiên quá trình cài đặt vẫn chưa hoàn thành, các công cụ cần để dễ dàng làm việc với Kubernetes sẽ tiếp tục ở bài sau, nhưng hiện giờ bạn đã biết các lệnh:
+
+```
+# khởi tạo một Cluster
+kubeadm init --apiserver-advertise-address=172.16.10.100 --pod-network-cidr=192.168.0.0/16
+
+# Cài đặt giao diện mạng calico sử dụng bởi các Pod
+kubectl apply -f https://docs.projectcalico.org/v3.10/manifests/calico.yaml
+
+# Thông tin cluster
+kubectl cluster-info
+
+# Các node (máy) trong cluster
+kubectl get nodes
+
+# Các pod (chứa container) đang chạy trong tất cả các namespace
+kubectl get pods -A
+
+# Xem nội dung cấu hình hiện tại của kubectl
+kubectl config view
+
+# Thiết lập file cấu hình kubectl sử dụng cho 1 phiên làm việc hiện tại của termianl
+export KUBECONFIG=/Users/xuanthulab/.kube/config-mycluster
+
+# Gộp file cấu hình kubectl
+export KUBECONFIG=~/.kube/config:~/.kube/config-mycluster
+kubectl config view --flatten > ~/.kube/config_temp
+mv ~/.kube/config_temp ~/.kube/config
+
+# Các ngữ cảnh hiện có trong config
+kubectl config get-contexts
+
+# Đổi ngữ cảnh làm việc (kết nối đến cluster nào)
+kubectl config use-context kubernetes-admin@kubernetes
+
+# Lấy mã kết nối vào Cluster
+kubeadm token create --print-join-command
+
+# node worker kết nối vào Cluster
+kubeadm join 172.16.10.100:6443 --token 5ajhhs.atikwelbpr0 ...
+```
 
 ### 1.1 Pod
 - [Tham khảo](https://xuanthulab.net/tim-hieu-ve-pod-va-node-trong-kubernetes.html)
@@ -351,67 +411,57 @@ Trong đó:
 [flags] các thiết lập, tùy thuộc loại lệnh
 ```
 
-**Danh sách các Node trong Cluster**
+```ruby
 
-`kubectl get nodes`
+# Danh sách các Node trong Cluster
+kubectl get nodes
 
-**Thông tin chi tiết về Node có tên name-node**
+# Thông tin chi tiết về Node có tên name-node
+kubectl describe node name-node
 
-`kubectl describe node name-node`
+# Nhãn của Node
+kubectl label node myNode tennhan=giatrinhan
 
-**Nhãn của Node**
+# Lấy các tài nguyên có nhãn nào đó
+kubectl get node -l "tennhan=giatrinhan"
 
-`kubectl label node myNode tennhan=giatrinhan`
+# Xóa nhãn
+kubectl label node myNode tennhan-
 
-**Lấy các tài nguyên có nhãn nào đó**
+# Liệt kê các POD trong namespace hiện tại
+# Thêm tham số -o wide hiện thị chi tiết hơn, thêm -A hiện thị tất cả namespace, thêm -n namespacename hiện thị Pod của namespace namespacename
+kubectl get pods
 
-`kubectl get node -l "tennhan=giatrinhan"`
+# Xem cấu trúc mẫu định nghĩa POD trong file cấu hình yaml
+kubectl explain pod --recursive=true
 
-**Xóa nhãn**
+# Triển khai tạo các tài nguyên định nghĩa trong file firstpod.yaml
+kubectl apply -f firstpod.yaml
 
-`kubectl label node myNode tennhan-`
+# Xóa các tài nguyên tạo ra từ định nghĩa firstpod.yaml
+kubectl delete -f firstpod.yaml
 
-**Liệt kê các POD trong namespace hiện tại**
-> Thêm tham số -o wide hiện thị chi tiết hơn, thêm -A hiện thị tất cả namespace, thêm -n namespacename hiện thị Pod của namespace namespacename
+# Lấy thông tin chi tiết POD có tên namepod, nếu POD trong namespace khác mặc định thêm vào tham số -n namespace-name
+kubectl describe pod/namepod
 
-`kubectl get pods`
+# Xem logs của POD có tên podname
+kubectl logs pod/podname
 
-**Xem cấu trúc mẫu định nghĩa POD trong file cấu hình yaml**
+# Chạy lệnh từ container của POD có tên mypod, nếu POD có nhiều container thêm vào tham số -c và tên container**
+kubectl exec mypod command
 
-`kubectl explain pod --recursive=true`
+# Chạy lệnh bash của container trong POD mypod và gắn terminal
+# Chú ý, nếu pod có nhiều container bên trong, thì cần chỉ rõ thi hành container nào bên trong nó bằng tham số -c containername
+kubectl exec -it mypod bash
 
-**Triển khai tạo các tài nguyên định nghĩa trong file firstpod.yaml**
+# Tạo server proxy truy cập đến các tài nguyên của Cluster. `http://localhost/api/v1/namespaces/default/pods/mypod:8085/proxy/,` truy cập đến container có tên mypod trong namespace mặc định.
 
-`kubectl apply -f firstpod.yaml`
+kubectl proxy
 
-**Xóa các tài nguyên tạo ra từ định nghĩa firstpod.yaml**
+# Xóa POD có tên mypod
+kubectl delete pod/mypod
 
-`kubectl delete -f firstpod.yaml`
-
-**Lấy thông tin chi tiết POD có tên namepod, nếu POD trong namespace khác mặc định thêm vào tham số -n namespace-name**
-
-`kubectl describe pod/namepod`
-
-**Xem logs của POD có tên podname**
-
-`kubectl logs pod/podname`
-
-**Chạy lệnh từ container của POD có tên mypod, nếu POD có nhiều container thêm vào tham số -c và tên container**
-
-`kubectl exec mypod command`
-
-**Chạy lệnh bash của container trong POD mypod và gắn terminal**
-> Chú ý, nếu pod có nhiều container bên trong, thì cần chỉ rõ thi hành container nào bên trong nó bằng tham số -c containername
-
-`kubectl exec -it mypod bash`
-
-Tạo server proxy truy cập đến các tài nguyên của Cluster. `http://localhost/api/v1/namespaces/default/pods/mypod:8085/proxy/,` truy cập đến container có tên mypod trong namespace mặc định.
-
-`kubectl proxy`
-
-**Xóa POD có tên mypod**
-
-`kubectl delete pod/mypod`
+```
 
 **Truy cập Pod từ bên ngoài Cluster**
 > Trong thông tin của Pod ta thấy có IP của Pod và cổng lắng nghe, tuy nhiên Ip này là nội bộ, chỉ các Pod trong Cluster liên lạc với nhau. Nếu bên ngoài muốn truy cập cần tạo một Service để chuyển traffic bên ngoài vào Pod (tìm hiểu sau), tại đây để debug - truy cập kiểm tra bằng cách chạy proxy
