@@ -47,6 +47,9 @@ Now, let us go back to the Dashboard and get to the Pods via the Pods link in th
 ![](https://miro.medium.com/max/1400/1*ce98Pun7cZMLU9tSXSncAw.png)
 
 ### Tạo Cluster Kubernetes
+
+[Tham Khảo](https://xuanthulab.net/gioi-thieu-va-cai-dat-kubernetes-cluster.html)
+
 Để có một Kubernetes cần có các máy chủ (ít nhất một máy), trên các máy cài đặt Docker và Kubernetes. Một máy khởi tạo là master và các máy khác là worker kết nối vào. Có nhiều cách để có Cluster Kubernetes, như cài đặt minikube để có kubernetes một nút (node) để thực hành (môi trường chạy thử), hay dùng ngay Kubernetes trong Docker Desktop, hay cài đặt một hệ thống đầy đủ (Cài Docker, Cài và khởi tạo Cluster Kubernetes), hay mua từ các nhà cung cấp dịch vụ như Google Cloud Platform, AWS, Azuze ...
 
 #### Tạo Cluster Kubernetes hoàn chỉnh
@@ -292,6 +295,53 @@ kubeadm token create --print-join-command
 # node worker kết nối vào Cluster
 kubeadm join 172.16.10.100:6443 --token 5ajhhs.atikwelbpr0 ...
 ```
+
+#### Cấu hình kubectl máy trạm truy cập đến các Cluster
+Khi thi hành kubectl, thì nó đọc file cấu hình ở đường dẫn $HOME/.kube/config để biết các thông số để kết nối đến Cluster.
+
+Trở lại máy Host, để xem nội dung cấu hình kubectl gõ lệnh
+
+`kubectl config view`
+
+Tại máy master ở trên, có file cấu hình cho tại `/root/.kube/config`, ta copy file cấu hình này ra lưu thành file `config-mycluster (không ghi đè vào config hiện tại của máy HOST)`
+
+`scp root@172.16.10.100:/etc/kubernetes/admin.conf ~/.kube/config-mycluster`
+
+Vậy trên máy của tôi đang có 2 file cấu hình
+
+```
+/User/your_name/.kube/config-mycluster cấu hình kết nối đến Cluster mới tạo ở trên
+/User/your_name/.kube/config cấu hình kết nối đến Cluster cục bộ của bản Kubernetes có sẵn của Docker
+```
+
+Nếu muốn yêu cầu kubectl sử dụng ngay file cấu hình nào đó, thì gán biến môi trường KUBECONFIG bằng đường dẫn file cấu hình, ví dụ sử dụng file cấu hình config-mycluster
+
+`export KUBECONFIG=/Users/your_name/.kube/config-mycluster`
+
+Sau lệnh đó thì kubectl sẽ dùng config-mycluster để có thông tin kết nối đến, nhưng trường hợp này chỉ có hiệu lực trong một phiên làm việc, ví dụ nếu bạn đóng terminal và mở lại thì lại phải thiết lập lại biến môi trường như trên.
+
+#### Sử dụng các context trong cấu hình kubectl
+Khi bạn xem nội dung config với lệnh `kubectl config view`, bạn thấy rằng nó khai báo có các mục cluster là thông tin của cluster với tên, user thông tin user được đăng nhập, `context` là ngữ cảnh sử dụng, mỗi ngữ cảnh có tên trong đó có thông tin `user và cluster`.
+
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes006.png)
+
+Ở file trên bạn thấy mục `current-context` là `context` với tên `docker-desktop`, có nghĩa là kết nối đến cluster có tên `docker-desktop` với user là `docker-desktop`
+
+Giờ bạn sẽ thực hiện kết hợp 2 file: `config` và `config-mycluster` thành 1 và lưu trở lại `config`.
+
+```
+export KUBECONFIG=~/.kube/config:~/.kube/config-mycluster
+kubectl config view --flatten > ~/.kube/config_temp
+mv ~/.kube/config_temp ~/.kube/config
+```
+
+Như vậy trong file cấu hình đã có các ngữ cảnh khác nhau để sử dụng, đóng terminal và mở lại rồi gõ lệnh, có các ngữ cảnh nào
+
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes007.png)
+
+`kubectl config use-context kubernetes-admin@kubernetes`
+
+> Như vậy sử dụng context, giúp bạn lưu và chuyển đổi dễ dàng các loại kết nối đến các cluster của bạn
 
 ### 1.1 Pod
 - [Tham khảo](https://xuanthulab.net/tim-hieu-ve-pod-va-node-trong-kubernetes.html)
