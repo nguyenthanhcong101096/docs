@@ -164,56 +164,56 @@ Trong đó:
 [flags] các thiết lập, tùy thuộc loại lệnh
 ```
 
-Danh sách các Node trong Cluster
+**Danh sách các Node trong Cluster**
 
 `kubectl get nodes`
 
-Thông tin chi tiết về Node có tên name-node
+**Thông tin chi tiết về Node có tên name-node**
 
 `kubectl describe node name-node`
 
-Nhãn của Node
+**Nhãn của Node**
 
 `kubectl label node myNode tennhan=giatrinhan`
 
-Lấy các tài nguyên có nhãn nào đó
+**Lấy các tài nguyên có nhãn nào đó**
 
 `kubectl get node -l "tennhan=giatrinhan"`
 
-Xóa nhãn
+**Xóa nhãn**
 
 `kubectl label node myNode tennhan-`
 
-Liệt kê các POD trong namespace hiện tại
+**Liệt kê các POD trong namespace hiện tại**
 > Thêm tham số -o wide hiện thị chi tiết hơn, thêm -A hiện thị tất cả namespace, thêm -n namespacename hiện thị Pod của namespace namespacename
 
 `kubectl get pods`
 
-Xem cấu trúc mẫu định nghĩa POD trong file cấu hình yaml
+**Xem cấu trúc mẫu định nghĩa POD trong file cấu hình yaml**
 
 `kubectl explain pod --recursive=true`
 
-Triển khai tạo các tài nguyên định nghĩa trong file firstpod.yaml
+**Triển khai tạo các tài nguyên định nghĩa trong file firstpod.yaml**
 
 `kubectl apply -f firstpod.yaml`
 
-Xóa các tài nguyên tạo ra từ định nghĩa firstpod.yaml
+**Xóa các tài nguyên tạo ra từ định nghĩa firstpod.yaml**
 
 `kubectl delete -f firstpod.yaml`
 
-Lấy thông tin chi tiết POD có tên namepod, nếu POD trong namespace khác mặc định thêm vào tham số -n namespace-name
+**Lấy thông tin chi tiết POD có tên namepod, nếu POD trong namespace khác mặc định thêm vào tham số -n namespace-name**
 
 `kubectl describe pod/namepod`
 
-Xem logs của POD có tên podname
+**Xem logs của POD có tên podname**
 
 `kubectl logs pod/podname`
 
-Chạy lệnh từ container của POD có tên mypod, nếu POD có nhiều container thêm vào tham số -c và tên container
+**Chạy lệnh từ container của POD có tên mypod, nếu POD có nhiều container thêm vào tham số -c và tên container**
 
 `kubectl exec mypod command`
 
-Chạy lệnh bash của container trong POD mypod và gắn terminal
+**Chạy lệnh bash của container trong POD mypod và gắn terminal**
 > Chú ý, nếu pod có nhiều container bên trong, thì cần chỉ rõ thi hành container nào bên trong nó bằng tham số -c containername
 
 `kubectl exec -it mypod bash`
@@ -222,11 +222,11 @@ Tạo server proxy truy cập đến các tài nguyên của Cluster. `http://lo
 
 `kubectl proxy`
 
-Xóa POD có tên mypod
+**Xóa POD có tên mypod**
 
 `kubectl delete pod/mypod`
 
-Truy cập Pod từ bên ngoài Cluster
+**Truy cập Pod từ bên ngoài Cluster**
 > Trong thông tin của Pod ta thấy có IP của Pod và cổng lắng nghe, tuy nhiên Ip này là nội bộ, chỉ các Pod trong Cluster liên lạc với nhau. Nếu bên ngoài muốn truy cập cần tạo một Service để chuyển traffic bên ngoài vào Pod (tìm hiểu sau), tại đây để debug - truy cập kiểm tra bằng cách chạy proxy
 
 ```
@@ -236,7 +236,8 @@ kubectl proxy --address="0.0.0.0" --accept-hosts='^*$'
 Truy cập đến địa chỉ http://localhost/api/v1/namespaces/default/pods/mypod:8085/proxy/
 ```
 
-Khi kiểm tra chạy thử, cũng có thể chuyển cổng để truy cập. Ví dụ cổng host 8080 được chuyển hướng truy cập đến cổng 8085 của POD mypod
+**Khi kiểm tra chạy thử,**
+Cũng có thể chuyển cổng để truy cập. Ví dụ cổng host 8080 được chuyển hướng truy cập đến cổng 8085 của POD mypod
 
 `kubectl port-forward mypod 8080:8085`
 
