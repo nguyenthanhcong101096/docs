@@ -1298,11 +1298,6 @@ data:
 ![](https://images.viblo.asia/2880276d-517f-4a63-b9c2-eada5a54a469.png)
 
 ### 1.5 Deployments
-Từ trước đến nay, thành phần đầu tiên cần phải khởi tạo trong một hệ thống Kubernetes không gì khác là **Pods**. Và như chúng ta đã biết, để quản lý trạng thái của các **Pods** thì lại cần tạo thêm các **Replication Controller** để quản lý các **Pods** đó, thao tác khá là cồng kềnh. Và hãy tưởng tượng ở một hệ thống lớn đến rất lớn có hàng trăm, hàng ngàn hay hàng vạn **Pods** thì lại cứ mất công đi tạo thêm các **Replication Controller** để quản lý các **Pods** hay nhóm Pods theo labels đó hay sao ?
-
-Kubernetes dã giới thiệu khái niệm **Deployments** giúp đơn giản hóa hơn quá trình bên trên. Với **Deployments** , chúng ta sẽ chỉ cần định nghĩa cấu hình và tạo 1 **Deployments** thì hệ thống sẽ tự động tạo ra 1 hay nhiều **Pods** tương ứng và **ReplicaSet** để quản lý trạng thái của các Pods đó. Ngoài ra, **Deployments** còn có cơ chế giúp người quản lý hệ thống dễ dàng cập nhật, rollback phiên bản của ứng dụng (phiên bản container chạy trong các Pods).
-
-
 - **Deployment** quản lý một nhóm các Pod - các Pod được nhân bản, nó tự động thay thế các Pod bị lỗi, không phản hồi bằng pod mới nó tạo ra. Như vậy, deployment đảm bảo ứng dụng của bạn có một (hay nhiều) Pod để phục vụ các yêu cầu.
 
 - **Deployment** sử dụng mẫu Pod (Pod template - chứa định nghĩa / thiết lập về Pod) để tạo các Pod (các nhân bản replica), khi template này thay đổi, các Pod mới sẽ được tạo để thay thế Pod cũ ngay lập tức.
@@ -1342,92 +1337,78 @@ spec:
           - containerPort: 8085
 ```
 
-Ở file yaml trên, chúng ta định nghĩa 1 deployment tên là kubia. Cấu hình cho Replicas luôn duy trì số lượng 3 Pods, các Pods chạy sẽ có labels app=kubia và container chạy trong Pods sẽ được build từ image luksa/kubia:v1
+Cấu hình cho Replicas luôn duy trì số lượng 3 Pods, các Pods chạy sẽ có labels app=kubia và container chạy trong Pods sẽ được build từ image luksa/kubia:v1
 
 --------------------------------
-Thực hiện lệnh sau để triển khai
-
-`kubectl apply -f 1.myapp-deploy.yaml`
-
-Khi Deployment tạo ra, tên của nó là deployapp, có thể kiểm tra với lệnh:
-
-`kubectl get deploy -o wide`
-
-Deploy này quản sinh ra một ReplicasSet và quản lý nó, gõ lệnh sau để hiện thị các ReplicaSet
-
-`kubectl get rs -o wide`
-
-Đến lượt ReplicaSet do Deploy quản lý lại thực hiện quản lý (tạo, xóa) các Pod, để xem các Pod
 
 ```
-kubeclt get po -o wide
+# Thực hiện lệnh sau để triển khai
+kubectl apply -f deploy.yaml
+
+# Khi Deployment tạo ra, tên của nó là deployapp, có thể kiểm tra với lệnh:
+kubectl get deploy -o wide
+
+# Deploy này quản sinh ra một ReplicasSet và quản lý nó, gõ lệnh sau để hiện thị các ReplicaSet
+kubectl get rs -o wide
 
 # Hoặc lọc cả label
 kubectl get po -l "app=deployapp" -o wide
+
+# Thông tin chi tiết về deploy
+kubectl describe deploy/deployapp
 ```
 
-Thông tin chi tiết về deploy
-
-`kubectl describe deploy/deployapp`
-
-
 #### Cập nhật Deployment
-Bạn có thể cập một Deployment bằng cách sử đổi mẫu (template) của Pod, khi template cập nhật thì nó tự động triển khai ra các Pod. `(sửa file yaml rồi cập nhật với kubectl apply -f ... hoặc biên tập trực tiếp với lệnh kubectl edit deploy/namedeploy)`
+- Bạn có thể cập một Deployment bằng cách sử đổi trực tiếp trong file yml
+- Khi cập nhật, ReplicaSet cũ sẽ hủy và ReplicaSet mới của Deployment được tạo, tuy nhiên ReplicaSet cũ chưa bị xóa để có thể khôi phục lại về trạng thái trước (rollback).
 
-Khi một Deployment được cập nhật, thì Deployment dừng lại các Pod, scale lại số lượng Pod về 0, sau đó sử dụng template mới của Pod để tạo lại Pod, Pod cũ không xóa hẳng cho đến khi Pod mới đang chạy, quá trình này diễn ra đến đâu có thể xem bằng lệnh `kubectl describe deploy/namedeploy`. Cập nhật như vậy nó đảm bảo luôn có Pod đang chạy khi đang cập nhật.
+- Quá trình Deployment cập nhật:
+  - Khi cập nhật thì Deployment sẽ dừng hết POD,
+  - Scale số lượng pod về 0
+  - Sau đó sẽ dụng template mới của POD để tạo lại POD, POD cũ không xoá hẳng cho đến khi POD mới đang chạy.
 
 ------------------------
-Có thể thu hồi lại bản cập nhật bằng cách sử dụng lệnh
+```
+# Có thể thu hồi lại bản cập nhật bằng cách sử dụng lệnh
+kubectl rollout undo
 
-`kubectl rollout undo`
+# Cập nhật image mới trong POD - ví dụ thay image của container node bằng image mới httpd
+kubectl set image deploy/deployapp node=httpd --record
 
-Cập nhật image mới trong POD - ví dụ thay image của container node bằng image mới httpd
+# Để xem quá trình cập nhật của deployment
+kubectl rollout status deploy/deployapp
 
-`kubectl set image deploy/deployapp node=httpd --record`
-
-Để xem quá trình cập nhật của deployment
-
-`kubectl rollout status deploy/deployapp`
-
-
-Khi cập nhật, ReplicaSet cũ sẽ hủy và ReplicaSet mới của Deployment được tạo, tuy nhiên ReplicaSet cũ chưa bị xóa để có thể khôi phục lại về trạng thái trước (rollback).
-
-Bạn cũng có thể cập nhật tài nguyên POD theo cách tương tự, ví dụ giới hạn CPU, Memory cho container với tên app-node
-
-`kubectl set resources deploy/deployapp -c=node --limits=cpu=200m,memory=200Mi`
+# Bạn cũng có thể cập nhật tài nguyên POD theo cách tương tự, ví dụ giới hạn CPU, Memory cho container với tên app-node
+kubectl set resources deploy/deployapp -c=node --limits=cpu=200m,memory=200Mi
+```
 
 #### Rollback Deployment
+```
+# Kiểm tra các lần cập nhật (revision)
+kubectl rollout history deploy/deployapp
 
-Kiểm tra các lần cập nhật (revision)
+# Để xem thông tin bản cập nhật 1 thì gõ lệnh
+kubectl rollout history deploy/deployapp --revision=1
 
-`kubectl rollout history deploy/deployapp`
+# Khi cần quay lại phiên bản cũ nào đó, ví dụ bản revision 1
+kubectl rollout undo deploy/deployapp --to-revision=1
 
-Để xem thông tin bản cập nhật 1 thì gõ lệnh
-
-`kubectl rollout history deploy/deployapp --revision=1`
-
-Khi cần quay lại phiên bản cũ nào đó, ví dụ bản revision 1
-
-`kubectl rollout undo deploy/deployapp --to-revision=1`
-
-Nếu muốn quay lại bản cập nhật trước gần nhất
-
-`kubectl rollout undo deploy/mydeploy`
+# Nếu muốn quay lại bản cập nhật trước gần nhất
+kubectl rollout undo deploy/mydeploy
+```
 
 #### Scale Deployment
+```
+# Scale thay đổi chỉ số replica (số lượng POD) của Deployment, ý nghĩa tương tự như scale đối với ReplicaSet trong phần trước. 
+# Ví dụ để scale với 10 POD thực hiện lệnh:
+kubectl scale deploy/deployapp --replicas=10
 
-Scale thay đổi chỉ số replica (số lượng POD) của Deployment, ý nghĩa tương tự như scale đối với ReplicaSet trong phần trước. Ví dụ để scale với 10 POD thực hiện lệnh:
+# Muốn thiết lập scale tự động với số lượng POD trong khoảng min, max và thực hiện scale khi CPU của POD hoạt động ở mức 50% thì thực hiện
+kubectl autoscale deploy/deployapp --min=2 --max=5 --cpu-percent=50
 
-`kubectl scale deploy/deployapp --replicas=10`
-
-Muốn thiết lập scale tự động với số lượng POD trong khoảng min, max và thực hiện scale khi CPU của POD hoạt động ở mức 50% thì thực hiện
-
-`kubectl autoscale deploy/deployapp --min=2 --max=5 --cpu-percent=50`
-
-Bạn cũng có thể triển khai Scale từ khai báo trong một yaml. Hoặc có thể trích xuất scale ra để chỉnh sửa
-
-`kubectl get hpa/deployapp -o yaml > 2.hpa.yaml`
-
+# Bạn cũng có thể triển khai Scale từ khai báo trong một yaml. Hoặc có thể trích xuất scale ra để chỉnh sửa
+kubectl get hpa/deployapp -o yaml > 2.hpa.yaml
+```
 
 [Concepts](https://kubernetes.io/docs/concepts/)
 
