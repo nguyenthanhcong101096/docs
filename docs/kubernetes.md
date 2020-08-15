@@ -653,651 +653,7 @@ spec:
 
 > Mặc dù có thể sử dụng ReplicaSet một cách độc lập, tuy nhiên trong triển khai hiện nay hay dùng Deployment, với Deployment nó sở hữu một ReplicaSet riêng. Bài tiếp theo sẽ nói về Deployment
 
-### 1.3 Services
-- [Tham khảo](https://xuanthulab.net/su-dung-service-va-secret-tls-trong-kubernetes.html)
-- Vì pod có tuổi thọ ngắn nên không đảm bảo về địa chỉ IP mà chúng được cung cấp.
-- Service là khái niệm được thực hiện bởi : domain name, và port. Service sẽ tự động "tìm" các pod được đánh label phù hợp (trùng với label của service), rồi chuyển các connection tới đó.
-- Nếu tìm được 5 pods thoả mã label, service sẽ thực hiện load-balancing: chia connection tới từng pod theo chiến lược được chọn (VD: round-robin: lần lượt vòng tròn).
-- Mỗi service sẽ được gán 1 domain do người dùng lựa chọn, khi ứng dụng cần kết nối đến service, ta chỉ cần dùng domain là xong. Domain được quản lý bởi hệ thống name server SkyDNS nội bộ của k8s - một thành phần sẽ được cài khi ta cài k8s.
-- Đây là nơi bạn có thể định cấu hình cân bằng tải cho nhiều pod và expose các pod đó.
-
-> Kubernetes Service là một tài nguyên cho phép tạo một điểm truy cập duy nhất đến các Pods cung cấp cùng một dịch vụ. Mỗi Service có địa chỉ IP và port không đổi. Client có thể mở các kết nối đến IP và port của service, sau đó chúng sẽ được điều hướng đến các Pods để xử lý.
-
-![](https://images.viblo.asia/ca651b76-80dc-4cac-9bf5-204ff5769b5f.png)
-
-Tạo Service bằng cách cấu hình file yml
-
-File `kubia-svc.yaml`
-
-```
-apiVersion: v1
-kind: Service
-metadata:
- name: kubia
-spec:
- ports:
- - port: 80
- targetPort: 8080
- selector:
- app: kubia 
-```
-
-- **kind**: Service thể hiển rằng thành phần cần tạo là Service
-- **port**: 80 thể hiện rằng cổng tương tác với Service là cổng 80
-- **targetPort**: 8080 là cổng của các container trong pods mà service sẽ điều hướng kết nối đến
-- **app**: kubia (thuộc phần selector) thể hiển rằng service tương tác với các pods có labels là app=kubia
-
-Tạo Service
-
-`kubectl create -f kubia-svc.yaml`
-
-Kiểm tra các service với lệnh
-
-```
-$ kubectl get svc
-NAME        CLUSTER-IP    EXTERNAL-IP  PORT(S) AGE
-kubernetes  10.111.240.1    <none>      443/TCP 30d
-kubia       10.111.249.153  <none>      80/TCP 6m 
-```
-
-Ở phần spec chúng ta có thể thêm 1 trường nữa là type biểu thể kiểu service cần dùng (mặc định là ClusterIP). Các loại `Service` bao gồm. 
-
-- **ClusterIP**: Service chỉ có địa chỉ IP cục bộ và chỉ có thể truy cập được từ các thành phần trong cluster Kubernetes.
-- **NodePort**: Service có thể tương tác qua Port của các worker nodes trong cluster (sẽ giải thích kỹ hơn ở phần sau)
-- **LoadBlancer**: Service có địa chỉ IP public, có thể tương tác ở bất cứ đâu.
-- **ExternalName**: Ánh xạ service với 1 DNS Name
-
-Chúng ta hoàn toàn có thể config cho Service nhiều hơn 1 cổng, ở file dưới chúng ta config cổng tương tác của service cho giao thức http và https ứng với 2 cổng 8080 và 8443 trong container.
-
-```
-apiVersion: v1
-kind: Service
-metadata:
- name: kubia 
-spec:
- ports:
- - name: http
- port: 80
- targetPort: 8080
- - name: https
- port: 443
- targetPort: 8443
- selector:
- app: kubia 
-```
-
-#### Service NodePort
-Như ở trên, sau khi tạo Service và dùng lệnh kubectl get svc để kiểm tra service vừa tạo thì chúng ta thấy rõ ràng có 2 thống số IP là **CLUSTER_IP** và **EXTERNAL_IP** có giá trị <none>.
-
-- **CLUSTER_IP**: Là địa chỉ IP cục bộ trong Cluster Kubernetes, với địa chỉ IP này thì các Pods hay Services có thể tương tác với nhau nhưng bên ngoài sẽ không thể tác tương tác với Service thông qua nó được.
-- **EXTERNAL_IP**: IP public, có thể dùng để client bên ngoài (hoặc bất cứ đâu) tương tác với Service.
-
-Type NodePort giúp Service có thể tương tác được từ bên ngoài thông qua port của worker node.
-
-Khởi tạo file config `kubia-svc-nodeport.yaml`
-```
-apiVersion: v1
-kind: Service
-metadata:
- name: kubia-nodeport
-spec:
- type: NodePort
- ports:
- - port: 80
- targetPort: 8080
- nodePort: 30123
- selector:
- app: kubia
-```
-
-**nodePort**: số hiệu cổng của node worker được mở để bên ngoài tương tác với service
-
-Kiểm tra thông tin service:
-```
-$ kubectl get svc kubia-nodeport
-NAME           CLUSTER-IP      EXTERNAL-IP   PORT(S) AGE
-kubia-nodeport 10.111.254.223   <nodes>      80:30123/TCP 2m
-```
-
-Khi tương tác với service, client sẽ truy cập qua <Địa chỉ Ip public của Node>:Port
-
-![](https://images.viblo.asia/82c45b8f-9c1b-41d5-a8ab-e67b4725084a.png)
-
-#### Service load balancer
-Tạo một Service kiểu Loadblancer sẽ cung cấp thêm địa chỉ IP public để client bên ngoài có thể gửi request đến.
-
-![](https://images.viblo.asia/fe58cece-06bc-4ec1-b3f0-f835ac7a5c92.png)
-
-File `kubia-svc-loadbalancer.yaml`
-
-```
-apiVersion: v1
-kind: Service
-metadata:
- name: kubia-loadbalancer
-spec:
- type: LoadBalancer
- ports:
- - port: 80
- targetPort: 8080
- selector:
- app: kubia
-```
-
-Tạo Service:
-
-`kubectl create -f kubia-svc-loadbalancer.yaml`
-
-Kết quả:
-
-```
-$ kubectl get svc kubia-loadbalancer
-NAME               CLUSTER-IP      EXTERNAL-IP     PORT(S) AGE
-kubia-loadbalancer 10.111.241.153  130.211.53.173  80:32143/TCP 1m
-```
-----------------------
-#### Tạo Service Kubernetes
-
-Tạo Service kiểu ClusterIP, không Selector
-
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: svc1
-spec:
-  type: ClusterIP
-  ports:
-    - name: port1
-      port: 80
-      targetPort: 80
-```
-
-File trên khai báo một service đặt tên svc1, kiểu của service là ClusterIP, đây là kiểu mặc định `(ngoài ra còn có kiểu NodePort, LoadBalancer, ExternalName)`, phần khai báo cổng gồm có cổng của service (port) tương ứng ánh xạ vào cổng của endpoint (`targetPort - thường là cổng Pod`).
-
-Triển khai file trên
-
-```
-kubectl apply -f 1.svc1.yaml
-
-# lấy các service
-kubectl get svc -o wide
-
-# xem thông tin của service svc1
-kubectl describe svc/svc1
-```
-
-![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes054.png)
-
-Hệ thống đã tạo ra service có tên là svc1 với địa chỉ IP là 10.97.217.42, khi Pod truy cập địa chỉ IP này với cổng 80 thì nó truy cập đến các endpoint định nghĩa trong dịch vụ. Tuy nhiên thông tin service cho biết phần endpoints là không có gì, có nghĩa là truy cập thì không có phản hồi nào.
-
-----------------------
-
-#### Tạo EndPoint cho Service (không selector)
-Service trên có tên `svc1`, không có `selector` để xác định các Pod là endpoint của nó, nên có thể tự tạo ra một endpoint cùng tên `svc1`
-
-```
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: svc1
-subsets:
-  - addresses:
-      - ip: 216.58.220.195      # đây là IP google
-    ports:
-      - name: port1
-        port: 80
-```
-
-Triển khai với lệnh
-
-`kubectl apply -f 2.endpoint.yaml`
-
-Xem lại thông tin
-```
-kubectl describe svc/svc1
-
-Name:              svc1
-Namespace:         default
-Labels:            <none>
-Annotations:       kubectl.kubernetes.io/last-applied-configuration: ...
-Selector:          <none>
-Type:              ClusterIP
-IP:                10.97.217.42
-Port:              port1  80/TCP
-TargetPort:        80/TCP
-Endpoints:         216.58.220.195:80
-Session Affinity:  None
-Events:            <none>
-```
-
-Như vậy svc1 đã có endpoints, khi truy cập `svc1:80` hoặc `svc1.default:80` hoặc `10.97.217.42:80` có nghĩa là truy cập `216.58.220.195:80`
-
-----------------------
-#### Thực hành tạo Service có Selector, chọn các Pod là Endpoint của Service
-Trước tiên triển khai trên Cluster 2 POD chạy độc lập, các POD đó đều có nhãn app: app1
-
-`3.pods.yaml`
-```
-apiVersion: v1
-kind: Pod
-metadata:
-  name: myapp1
-  labels:
-    app: app1
-spec:
-  containers:
-  - name: n1
-    image: nginx
-    resources:
-      limits:
-        memory: "128Mi"
-        cpu: "100m"
-    ports:
-      - containerPort: 80
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: myapp2
-  labels:
-    app: app1
-spec:
-  containers:
-  - name: n1
-    image: httpd
-    resources:
-      limits:
-        memory: "128Mi"
-        cpu: "100m"
-    ports:
-```
-
-Triển khai file trên
-
-`kubectl apply -f 3.pods.yaml`
-
-![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes055.png)
-
-Nó tạo ra 2 POD `myapp1 (192.168.41.147 chạy nginx)` và `myapp2 (192.168.182.11 chạy httpd)`, chúng đều có nhãn `app=app1`
-
-Tiếp tục tạo ra service có tên `svc2` có thêm thiết lập `selector`chọn nhãn `app=app1`
-
-`4.svc2.yaml`
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: svc2
-spec:
-  selector:
-     app: app1
-  type: ClusterIP
-  ports:
-    - name: port1
-      port: 80
-      targetPort: 80
-```
-
-Triển khai và kiểm tra
-
-```
-$ 04-svc $ kubectl apply -f 4.svc2.yaml
-service/svc2 created
-
-$ 04-svc $ kubectl describe svc/svc2
-Name:              svc2
-Namespace:         default
-Labels:            <none>
-Annotations:       kubectl.kubernetes.io/last-applied-configuration: ...
-Selector:          app=app1
-Type:              ClusterIP
-IP:                10.100.165.105
-Port:              port1  80/TCP
-TargetPort:        80/TCP
-Endpoints:         192.168.182.11:80,192.168.41.147:80
-Session Affinity:  None
-Events:            <none>
-```
-
-Thông tin trên ta có, endpoint của svc2 là `192.168.182.11:80,192.168.41.147:80`, hai IP này tương ứng là của 2 POD trên. Khi truy cập địa chỉ svc2:80 hoặc `10.100.165.105:80` thì căn bằng tải hoạt động sẽ là truy cập đến `192.168.182.11:80` (myapp1) hoặc `192.168.41.147:80` (myapp2)
-
-----------------------
-#### Thực hành tạo Service kiểu NodePort
-Kiểu NodePort này tạo ra có thể truy cập từ ngoài internet bằng IP của các Node, ví dụ sửa dịch vụ svc2 trên thành dịch vụ svc3 kiểu NodePort
-
-`5.svc3.yaml`
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: svc3
-spec:
-  selector:
-     app: app1
-  type: NodePort
-  ports:
-    - name: port1
-      port: 80
-      targetPort: 80
-      nodePort: 31080
-```
-
-Trong file trên, thiết lập kiểu với `type: NodePort`, lúc này Service tạo ra có thể truy cập từ các IP của Node với một cổng nó ngẫu nhiên sinh ra trong khoảng `30000-32767`. Nếu muốn ấn định một cổng của Service mà không để ngẫu nhiên thì dùng tham số nodePort như trên.
-
-Triển khai file trên
-
-`kubectl appy -f 5.svc3.yaml`
-
-Sau khi triển khai có thể truy cập với IP là địa chỉ IP của các Node và cổng là 31080, ví dụ 172.16.10.101:31080
-
-----------------------
-#### Ví dụ ứng dụng Service, Deployment, Secret
-Trong ví dụ này, sẽ thực hành triển khai chạy máy chủ nginx với mức độ áp dụng phức tạp hơn đó là
-
-- Xây dựng một image mới từ image cơ sở nginx rồi đưa lên `registry` - Hub Docker đặt tên là `ichte/swarmtest:nginx`
-- Tạo Secret chứa xác thực SSL sử dụng bởi `ichte/swarmtest:nginx`
-- Tạo deployment chạy/quản lý các POD có chạy `ichte/swarmtest:nginx`
-- Tạo Service kiểu NodePort để truy cập đến các POD trên
-
-
-**Xây dựng image ichte/swarmtest:nginx**
-
-Image cơ sở là nginx (chọn tag bản 1.17.6), đây là một proxy nhận các yêu cầu gửi đến. Ta sẽ cấu hình để nó nhận các yêu cầu http (cổng 80) và https (cổng 443).
-
-Tạo ra thư mục nginx để chứa các file dữ liệu, đầu tiên là tạo ra file cấu hình nginx.conf, file cấu hình này được copy vào image ở đường dẫn /etc/nginx/nginx.conf khi build image.
-
-1 Chuẩn bị file cấu hình nginx.conf
-
-```
-error_log  /var/log/nginx/error.log warn;
-pid        /var/run/nginx.pid;
-
-events {
-  worker_connections  4096;  ## Default: 1024
-}
-
-
-http {
-    include       /etc/nginx/mime.types;
-    default_type  application/octet-stream;
-
-    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-                      '$status $body_bytes_sent "$http_referer" '
-                      '"$http_user_agent" "$http_x_forwarded_for"';
-
-    access_log  /var/log/nginx/access.log  main;
-
-    sendfile        on;
-    keepalive_timeout  65;
-    #gzip  on;
-    server {
-        listen 80;
-        server_name localhost;                    # my-site.com
-        root  /usr/share/nginx/html;
-    }
-    server {
-        listen  443 ssl;
-        server_name  localhost;                   # my-site.com;
-        ssl_certificate /certs/tls.crt;           # fullchain.pem
-        ssl_certificate_key /certs/tls.key;       # privkey.pem
-        root /usr/share/nginx/html;
-    }
-}
-
-```
-
-2. File html
-
-```
-<!DOCTYPE html>
-<html>
-<head><title>Nginx -  Test!</title></head>
-<body>
-    <h1>Chạy Nginx trên Kubernetes</h1>    
-</body>
-</html>
-```
-
-3. Xây dựng image mới
-
-```
-FROM nginx:1.17.6
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY index.html /usr/share/nginx/html/index.html
-```
-
-Build thành Image mới đặt tên là `ichte/swarmtest:nginx` (đặt tên theo tài khoản của bạn trên Hub Docker, hoặc theo cấu trúc Registry riêng nếu sử dụng) và push Image nên Docker Hub
-
-```
-# build image từ Dockerfile, đặt tên image mới là ichte/swarmtest:nginx
-docker build -t ichte/swarmtest:nginx -f Dockerfile .
-
-# đẩy image lên hub docker
-docker push ichte/swarmtest:nginx
-```
-
-#### Tạo Deployment triển khai các Pod chạy ichte/swarmtest:nginx
-
-`6.nginx.yaml`
-```
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: ichte/swarmtest:nginx
-        imagePullPolicy: "Always"
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "100m"
-        ports:
-        - containerPort: 80
-        - containerPort: 443
-```
-
-Khi triển khai file này, có lỗi tạo container vì trong cấu hình có thiết lập SSL (server lắng nghe cổng 443) với các file xác thực ở đường dẫn /certs/tls.crt, /certs/tls.key nhưng hiện tại file này không có, ta sẽ sinh hai file này và đưa vào qua Secret
-
-#### Tự sinh xác thực với openssl
-Xác thực SSL gồm có `server certificate và private key`, đối với nginx cấu hình qua hai thiết lập `ssl_certificate và ssl_certificate_key` tương ứng ta đã cấu hình là hai `file tls.crt, tls.key.` Ta để tên này vì theo cách đặt tên của letsencrypt.org, sau này bạn có thể thận tiện hơn nếu xin xác thực miễn phí từ đây.
-
-Thực hiện lệnh sau để sinh file tự xác thực
-
-```
-openssl req -nodes -newkey rsa:2048 -keyout tls.key  -out ca.csr -subj "/CN=xuanthulab.net"
-openssl x509 -req -sha256 -days 365 -in ca.csr -signkey tls.key -out tls.crt
-```
-
-Đến đây có 2 file `tls.key và tls.crt`
-
-#### Tạo Secret tên secret-nginx-cert chứa các xác thực
-Thi hành lệnh sau để tạo ra một Secret (loại ổ đĩa chứa các thông tin nhạy cảm, nhỏ), Secret này kiểu tls, tức chứa xác thức SSL
-
-`kubectl create secret tls secret-nginx-cert --cert=certs/tls.crt  --key=certs/tls.key`
-
-Secret này tạo ra thì mặc định nó đặt tên file là tls.crt và tls.key có thể xem với lệnh
-
-`kubectl describe secret/secret-nginx-cert`
-
-#### Sử dụng Secret cho Pod
-Đã có Secret, để POD sử dụng được sẽ cấu hình nó như một ổ đĩa đê Pod đọc, sửa lại Deployment 6.nginx.yaml như sau:
-
-`6.nginx.yaml`
-```
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec: 
-      volumes:
-        - name: cert-volume
-          secret:
-             secretName: "secret-nginx-cert" 
-      containers:
-      - name: nginx
-        image: ichte/swarmtest:nginx
-        imagePullPolicy: "Always"
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "100m"
-        ports:
-        - containerPort: 80
-        - containerPort: 443 
-        volumeMounts:
-          - mountPath: "/certs"
-            name: cert-volume 
-```
-
-#### Tạo Service truy cập kiểu NodePort
-
-Thêm vào cuỗi file `6.nginx.yaml`
-```
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: my-nginx
-spec:
-  type: NodePort
-  ports:
-  - port: 8080        # cổng dịch vụ ánh xạ vào cổng POD
-    targetPort: 80    # cổng POD ánh xạ vào container
-    protocol: TCP
-    name: http
-    nodePort: 31080   # cổng NODE ánh xạ vào cổng dịch vụ (chỉ chọn 30000-32767)
-
-  - port: 443
-    targetPort: 443
-    protocol: TCP
-    name: https
-    nodePort: 31443
-  # Chú ý đúng với Label của POD tại Deployment
-  selector:
-    app: nginx
-```
-
-Giờ có thể truy cập từ địa chỉ IP của Node với cổng tương ứng (Kubernetes Docker thì http://localhost:31080 và https://localhost:31443)
-
-![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes030.png)
-
-----------------------
-### 1.4 Volumes 
-Như chúng ta đã biết, hệ thống Kubermetes sẽ tạo ra Pods mới thay thế khi một Pods bị lỗi, chết hay crash. Vậy còn dữ liệu được lưu trong Pods cũ sẽ đi đâu ? Pods mới có lấy lại được dữ liệu của Pods cũ đã mất để tiếp tục sử dụng không ? Khái niệm Voulumes sẽ giúp giải quyết các vấn đề trên.
-
-**Volumes** là thành phần trực thuộc Pods. **Volumes** được định nghĩa trong cấu hình file yaml khi khởi tạo các Pods. Các container có thể thực hiện mount dữ liệu bên trong container đến đối tượng **volumes** thuộc cùng Pods.
-
-![](https://images.viblo.asia/27422723-9966-42d5-878b-d204396ba905.png)
-Các Container trong Pods mount đến 2 voumes để chia sẻ dữ liệu với nhau
-
-- Volumes có thể là local `filesystem,local storage, Ceph, Gluster, Elastic Block Storage,..`
-
-#### EmptyDir Volumes
-là loại volumes đơn giản nhất. Ban đầu chỉ là một folder trống, các container có thể sử dụng emptyDir volumes để đọc, ghi dữ liệu và chia sẻ cho các container khác cùng Pods. Khi Pods bị crash hay bị xóa thì emptyDir volumes cũng mất luôn cùng với dữ liệu trong nó.
-
-`fortune-pod.yaml`
-
-```
-apiVersion: v1
-kind: Pod
-metadata:
- name: fortune
-spec:
- containers:
- - image: luksa/fortune
-     name: html-generator
-     volumeMounts:
-         - name: html
-             mountPath: /var/htdocs
- - image: nginx:alpine
-     name: web-server
-     volumeMounts:
-         - name: html
-             mountPath: /usr/share/nginx/html
-             readOnly: true
-     ports:
-         - containerPort: 80
-           protocol: TCP
-     volumes:
-     - name: html
-         emptyDir: {} 
-```
-
-Nhìn vào file cấu hình trên, ta có:
-
-- Pods gồm có 2 container là: html-generator, web-server.
-- Thư mục của container html-generator được mount với volumes là /var/htdocs
-- Thư mục của container web-server được mount với volumes là /usr/share/nginx/html ở cế độ readOnly (chỉ đọc dữ liệu từ volumes vào container).
-
-Ở ví dụ này, container html-generator sẽ thay đổi file index.html trong folder /var/htdocs 10 giây 1 lần. Khi file html mới được hình thành, nó sẽ được cập nhật ở volumes và container web-server có thể đọc chúng. Khi người dùng gửi request chẳng hạn đến container web-server nginx, dữ liệu được trả về là file index.html mới nhất.
-
-- 3 Dòng cuối chứa thông tin về tên volumes và kiểu volumes là emptyDir. Mặc định, emptyDir sẽ dùng tài nguyên ổ cứng của worker nodes để lưu trữ. Chúng ta có thể có một lựa chọn khác là sử dụng bộ nhớ RAM của worker nodes như sau
-
-```
-volumes:
-  - name: html
-  emptyDir:
-      medium: Memory
-```
-
-#### hostPath volume
-Như chúng ta đã biết, với `empty volume`, dữ liệu sẽ mất khi Pods bị lỗi, xóa hay crash vì `empty volume` là một thành phần thuộc Pods. Với `hosPath volume`, dữ liệu được lưu trong `volumes` sẽ không bị mất khi Pods bị lỗi vì nó vốn được nằm ngoài Pods (trong hệ thống file của worker node). Khi Pods mới được tạo thành để thay thế Pods cũ, nó sẽ mount đến `hostPath volume` để làm việc tiếp với các dữ liệu ở Pods cũ.
-
-![](https://images.viblo.asia/26c81744-115e-4d1d-a7ae-a74c305ba83b.png)
-
-#### ConfigMap và Secret
-Thông thường khi lập trình các ứng dụng, chúng ta đều cho các biến quan trọng (như mật khẩu `url DB, secret key, tên DB v.v.`) vào file `.env` dưới dạng biến môi trường để bảo đảm tính bí mật. Trong hệ thống **Kubernetes, Config Map và Secret** là 2 loại volumes giúp lưu trữ biến môi trường để dùng cho các container thuộc các Pods khác nhau. **Config Map** sẽ dùng với các biến môi trường không chứa thông tin quá nhạy cảm, cần bí mật. Secret, như đúng với cái tên gọi của nó sẽ được dùng để lưu trữ các biến môi trường quan trọng, nhạy cảm. Khác với các loại volume khác, **Config Map** và Secret sẽ được định nghĩa riêng với file `yaml` thay vì cấu hình ở trong file `yaml` khởi tạo Pods.
-
-```
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  creationTimestamp: 2017-12-27T18:36:28Z
-  name: game-config-env-file
-  namespace: default
-  resourceVersion: "809965"
-  uid: d9d1ca5b-eb34-11e7-887b-42010a8002b8
-data:
-  allowed: '"true"'
-  enemies: aliens
-  lives: "3"
-```
-
-```
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mysecret
-type: Opaque
-data:
-  username: YWRtaW4=
-  password: MWYyZDFlMmU2N2Rm
-```
-
-![](https://images.viblo.asia/2880276d-517f-4a63-b9c2-eada5a54a469.png)
-
-### 1.5 Deployments
+### 1.3 Deployments
 - **Deployment** quản lý một nhóm các Pod - các Pod được nhân bản, nó tự động thay thế các Pod bị lỗi, không phản hồi bằng pod mới nó tạo ra. Như vậy, deployment đảm bảo ứng dụng của bạn có một (hay nhiều) Pod để phục vụ các yêu cầu.
 
 - **Deployment** sử dụng mẫu Pod (Pod template - chứa định nghĩa / thiết lập về Pod) để tạo các Pod (các nhân bản replica), khi template này thay đổi, các Pod mới sẽ được tạo để thay thế Pod cũ ngay lập tức.
@@ -1413,6 +769,266 @@ kubectl get hpa/deployapp -o yaml > 2.hpa.yaml
 [Concepts](https://kubernetes.io/docs/concepts/)
 
 [Tham khảo](https://xuanthulab.net/deployment-trong-kubernetes-trien-khai-cap-nhat-va-scale.html)
+
+### 1.4 Services
+- Service là khái niệm được thực hiện bởi : `domain name, và port`. Service sẽ tự động "tìm" các pod được đánh `label` phù hợp (trùng với label của service), rồi chuyển các connection tới đó.
+- Nếu tìm được `5 pods` thoả mã `label, service` sẽ thực hiện `load-balancing`: chia connection tới từng pod theo chiến lược được chọn (VD: round-robin: lần lượt vòng tròn).
+- Cũng có thể hiểu Service là một dịch vụ mạng, tạo cơ chế cân bằng tải `(load balancing)` truy cập đến các điểm cuối (thường là các Pod) mà Service đó phục vụ.
+
+> Kubernetes Service là một tài nguyên cho phép tạo một điểm truy cập duy nhất đến các Pods cung cấp cùng một dịch vụ. Mỗi Service có địa chỉ IP và port không đổi. Client có thể mở các kết nối đến IP và port của service, sau đó chúng sẽ được điều hướng đến các Pods để xử lý.
+
+![](https://images.viblo.asia/ca651b76-80dc-4cac-9bf5-204ff5769b5f.png)
+
+***Tạo Service bằng cách cấu hình file yml***
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: service
+spec:
+  selector:
+    app: app
+  ports:
+  - port: 80
+    targetPort: 3000
+```
+
+- **kind**: Service thể hiển rằng thành phần cần tạo là Service
+- **port**: 80 thể hiện rằng cổng tương tác với Service là cổng 80
+- **targetPort**: 8080 là cổng của các container trong pods mà service sẽ điều hướng kết nối đến
+- **app**: kubia (thuộc phần selector) thể hiển rằng service tương tác với các pods có labels là app=kubia
+
+```
+# Tạo Service
+kubectl create -f kubia-svc.yaml
+
+# Kiểm tra các service với lệnh
+
+$ kubectl get svc
+NAME        CLUSTER-IP    EXTERNAL-IP  PORT(S) AGE
+kubernetes  10.111.240.1    <none>      443/TCP 30d
+kubia       10.111.249.153  <none>      80/TCP 6m
+```
+
+Ở phần spec chúng ta có thể thêm 1 trường nữa là type biểu thể kiểu service cần dùng (mặc định là ClusterIP). Các loại `Service` bao gồm. 
+
+- **ClusterIP**: Service chỉ có địa chỉ IP cục bộ và chỉ có thể truy cập được từ các thành phần trong cluster Kubernetes.
+- **NodePort**: Service có thể tương tác qua Port của các worker nodes trong cluster (sẽ giải thích kỹ hơn ở phần sau)
+- **LoadBlancer**: Service có địa chỉ IP public, có thể tương tác ở bất cứ đâu.
+- **ExternalName**: Ánh xạ service với 1 DNS Name
+
+--------------------------------------------------------
+
+**Tạo Service kiểu ClusterIP, không Selector**
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 3000
+```
+
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes054.png)
+
+khi Pod truy cập địa chỉ IP này với cổng 80 thì nó truy cập đến các endpoint định nghĩa trong dịch vụ. Tuy nhiên thông tin service cho biết phần endpoints là không có gì, có nghĩa là truy cập thì không có phản hồi nào.
+
+***Tạo EndPoint cho Service (không selector)***
+
+Service trên có tên `service`, không có selector để xác định các Pod là endpoint của nó, nên có thể tự tạo ra một endpoint cùng tên `service`
+
+```
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: service
+subsets:
+  - addresses:
+    - ip: 216.58.220.195 # đây là IP google
+    ports:
+    - port: 80
+```
+
+Triển khai với lệnh `kubectl apply -f endpoint.yml`
+Như vậy svc1 đã có `endpoints`, khi truy cập `svc1:80` hoặc `svc1.default:80` hoặc `10.97.217.42:80` có nghĩa là truy cập `216.58.220.195:80`
+
+-------------------------------------------------------------
+
+**Thực hành tạo Service kiểu NodePort**
+- Kiểu NodePort này tạo ra có thể truy cập từ ngoài internet bằng IP của các Node
+- Chúng ta hoàn toàn có thể config cho Service nhiều hơn 1 cổng
+- NodePort `30000-32767`
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: service
+spec:
+  type: NodePort
+  selector:
+    app: app
+  ports:
+  - name: https
+    port: 443
+    targetPort: 8443
+    nodePort: 30443
+  - name: http
+    port: 80
+    targetPort: 80
+    nodePort: 30080
+```
+
+- Sau khi triển khai có thể truy cập với IP là địa chỉ IP của các Node và cổng là `30080`, ví dụ `172.16.10.101:30080`
+
+```
+kubectl get svc/service
+
+NAME      TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+service   NodePort   10.108.54.237   <none>        80:30080/TCP   9m26s
+```
+
+**CLUSTER_IP**: Là địa chỉ IP cục bộ trong Cluster Kubernetes, với địa chỉ IP này thì các Pods hay Services có thể tương tác với nhau nhưng bên ngoài sẽ không thể tác tương tác với Service thông qua nó được.
+**EXTERNAL_IP**: IP public, có thể dùng để client bên ngoài (hoặc bất cứ đâu) tương tác với Service
+
+-------------------------------------------------------------
+
+**Thực hành tạo Service kiểu Loadblancer**
+- Service có địa chỉ IP public, có thể tương tác ở bất cứ đâu.
+- Tạo một Service kiểu Loadblancer sẽ cung cấp thêm địa chỉ IP public để client bên ngoài có thể gửi request đến.
+
+![](https://images.viblo.asia/fe58cece-06bc-4ec1-b3f0-f835ac7a5c92.png)
+
+File `service-loadbalancer.yaml`
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: service
+spec:
+  type: LoadBalancer
+  selector:
+    app: app
+  ports:
+  - port: 80
+    targetPort: 80
+```
+
+Tạo Service:
+
+`kubectl create -f service-loadbalancer.yaml`
+
+Kết quả:
+
+```
+$ kubectl get svc/service
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+service      NodePort    10.108.54.237   <none>        80:30243/TCP   40s
+```
+
+Truy cập
+
+```
+http://localhost
+```
+----------------------
+### 1.5 Volumes 
+Như chúng ta đã biết, hệ thống Kubermetes sẽ tạo ra Pods mới thay thế khi một Pods bị lỗi, chết hay crash. Vậy còn dữ liệu được lưu trong Pods cũ sẽ đi đâu ? Pods mới có lấy lại được dữ liệu của Pods cũ đã mất để tiếp tục sử dụng không ? Khái niệm Voulumes sẽ giúp giải quyết các vấn đề trên.
+
+**Volumes** là thành phần trực thuộc Pods. **Volumes** được định nghĩa trong cấu hình file yaml khi khởi tạo các Pods. Các container có thể thực hiện mount dữ liệu bên trong container đến đối tượng **volumes** thuộc cùng Pods.
+
+![](https://images.viblo.asia/27422723-9966-42d5-878b-d204396ba905.png)
+Các Container trong Pods mount đến 2 voumes để chia sẻ dữ liệu với nhau
+
+- Volumes có thể là local `filesystem,local storage, Ceph, Gluster, Elastic Block Storage,..`
+
+#### EmptyDir Volumes
+là loại volumes đơn giản nhất. Ban đầu chỉ là một folder trống, các container có thể sử dụng emptyDir volumes để đọc, ghi dữ liệu và chia sẻ cho các container khác cùng Pods. Khi Pods bị crash hay bị xóa thì emptyDir volumes cũng mất luôn cùng với dữ liệu trong nó.
+
+`fortune-pod.yaml`
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+ name: fortune
+spec:
+ containers:
+ - image: luksa/fortune
+     name: html-generator
+     volumeMounts:
+         - name: html
+             mountPath: /var/htdocs
+ - image: nginx:alpine
+     name: web-server
+     volumeMounts:
+         - name: html
+             mountPath: /usr/share/nginx/html
+             readOnly: true
+     ports:
+         - containerPort: 80
+           protocol: TCP
+     volumes:
+     - name: html
+         emptyDir: {} 
+```
+
+Nhìn vào file cấu hình trên, ta có:
+
+- Pods gồm có 2 container là: html-generator, web-server.
+- Thư mục của container html-generator được mount với volumes là /var/htdocs
+- Thư mục của container web-server được mount với volumes là /usr/share/nginx/html ở cế độ readOnly (chỉ đọc dữ liệu từ volumes vào container).
+
+Ở ví dụ này, container html-generator sẽ thay đổi file index.html trong folder /var/htdocs 10 giây 1 lần. Khi file html mới được hình thành, nó sẽ được cập nhật ở volumes và container web-server có thể đọc chúng. Khi người dùng gửi request chẳng hạn đến container web-server nginx, dữ liệu được trả về là file index.html mới nhất.
+
+- 3 Dòng cuối chứa thông tin về tên volumes và kiểu volumes là emptyDir. Mặc định, emptyDir sẽ dùng tài nguyên ổ cứng của worker nodes để lưu trữ. Chúng ta có thể có một lựa chọn khác là sử dụng bộ nhớ RAM của worker nodes như sau
+
+```
+volumes:
+  - name: html
+  emptyDir:
+      medium: Memory
+```
+
+#### hostPath volume
+Như chúng ta đã biết, với `empty volume`, dữ liệu sẽ mất khi Pods bị lỗi, xóa hay crash vì `empty volume` là một thành phần thuộc Pods. Với `hosPath volume`, dữ liệu được lưu trong `volumes` sẽ không bị mất khi Pods bị lỗi vì nó vốn được nằm ngoài Pods (trong hệ thống file của worker node). Khi Pods mới được tạo thành để thay thế Pods cũ, nó sẽ mount đến `hostPath volume` để làm việc tiếp với các dữ liệu ở Pods cũ.
+
+![](https://images.viblo.asia/26c81744-115e-4d1d-a7ae-a74c305ba83b.png)
+
+#### ConfigMap và Secret
+Thông thường khi lập trình các ứng dụng, chúng ta đều cho các biến quan trọng (như mật khẩu `url DB, secret key, tên DB v.v.`) vào file `.env` dưới dạng biến môi trường để bảo đảm tính bí mật. Trong hệ thống **Kubernetes, Config Map và Secret** là 2 loại volumes giúp lưu trữ biến môi trường để dùng cho các container thuộc các Pods khác nhau. **Config Map** sẽ dùng với các biến môi trường không chứa thông tin quá nhạy cảm, cần bí mật. Secret, như đúng với cái tên gọi của nó sẽ được dùng để lưu trữ các biến môi trường quan trọng, nhạy cảm. Khác với các loại volume khác, **Config Map** và Secret sẽ được định nghĩa riêng với file `yaml` thay vì cấu hình ở trong file `yaml` khởi tạo Pods.
+
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: 2017-12-27T18:36:28Z
+  name: game-config-env-file
+  namespace: default
+  resourceVersion: "809965"
+  uid: d9d1ca5b-eb34-11e7-887b-42010a8002b8
+data:
+  allowed: '"true"'
+  enemies: aliens
+  lives: "3"
+```
+
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysecret
+type: Opaque
+data:
+  username: YWRtaW4=
+  password: MWYyZDFlMmU2N2Rm
+```
+
+![](https://images.viblo.asia/2880276d-517f-4a63-b9c2-eada5a54a469.png)
 
 ### 1.6 Namespaces
 Đây là một công cụ dùng để nhóm hoặc tách các nhóm đối tượng. Namespaces được sử dụng để kiểm soát truy cập, kiểm soát truy cập network, quản lý resource và quoting.
