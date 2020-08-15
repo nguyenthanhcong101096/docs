@@ -6,6 +6,7 @@ sidebar_label: Kubernetes
 
 ![](https://topdev.vn/blog/wp-content/uploads/2019/05/Kubernetes.png)
 
+[API Kubernetes](https://v1-16.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.16/#pod-v1-core)
 ## 1. Khái niệm
 Kubernetes là dự án mã nguồn dể quản lý các container, automating deployment, scaling and manegement các ứng dụng trên container. (Tạo xóa sửa xếp lịch, scale trên nhiều máy) 
 
@@ -346,7 +347,7 @@ Như vậy trong file cấu hình đã có các ngữ cảnh khác nhau để s�
 ### 1.1 Pod
 - [Tham khảo](https://xuanthulab.net/tim-hieu-ve-pod-va-node-trong-kubernetes.html)
 
-- Pod là 1 nhóm các container chứa ứng gdụn cùng chia sẽ acsc tài gnuyên lưu trữ, địa chỉ IP...
+- Pod là 1 nhóm các container chứa ứng gdụn cùng chia sẽ các tài gnuyên lưu trữ, địa chỉ IP...
 - Pod có thể chạy theo 2 cách sau:
   - Pod that run a single container: 1 container tương ứng 1 Pod
   - Pods that run multiple containers that need to work together.: Một Pod có thể là một ứng dụng bao gồm nhiều container được kết nối chặt chẽ và cần phải chia sẻ tài nguyên với nhau giữa các container.
@@ -376,11 +377,11 @@ metadata:
  name: kubia-manual
 spec:
  containers:
- - image: luksa/kubia
- name: kubia
- ports:
- - containerPort: 8080
- protocol: TCP
+  - image: luksa/kubia
+  name: kubia
+  ports:
+  - containerPort: 8080
+  protocol: TCP
 ```
 
 - **apiVersion**: version của Kubernetes API
@@ -558,6 +559,8 @@ spec:
 - Replication controller đảm bảo rằng số lượng các pod replicas đã định nghĩa luôn luôn chạy đủ số lượng tại bất kì thời điểm nào.
 - Thông qua Replication controller, Kubernetes sẽ quản lý vòng đời của các pod, bao gồm scaling up and down, rolling deployments, and monitoring.
 
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes052.png)
+
 #### Cấu trúc của replication controllers
 ![](https://images.viblo.asia/f03449ef-0f91-40de-ab2b-8990ff478d0d.png) 
 
@@ -598,6 +601,16 @@ $ kubectl create -f kubia-rc.yaml
 replicationcontroller "kubia" created
 ```
 
+Để lấy các ReplicaSet thực hiện lệnh
+```
+kubectl get rs
+```
+
+Thông tin về ReplicaSet có tên rsapp
+```
+kubectl get rs/rsapp
+```
+
 Ok, giờ chúng ta sẽ xóa 1 Pods với lệnh
 ```
 kubectl delete pod [tên-pod]
@@ -605,6 +618,40 @@ kubectl delete pod [tên-pod]
 
 Gần như ngay lập tức sẽ có 1 Pods mới được tạo thành thay thế Pods vừa bị xóa.
 ![](https://images.viblo.asia/1230c5f1-6ea9-4169-bf7d-e4ccb1ee2629.png)
+
+
+#### Horizontal Pod AutoScaler
+Horizontal Pod Autoscaler là chế độ tự động scale (nhân bản POD) dựa vào mức độ hoạt động của CPU đối với POD, nếu một POD quá tải - nó có thể nhân bản thêm POD khác và ngược lại - số nhân bản dao động trong khoảng min, max cấu hình
+
+Ví dụ, với ReplicaSet rsapp trên đang thực hiện nhân bản có định 3 POD (replicas), nếu muốn có thể tạo ra một HPA để tự động scale (tăng giảm POD) theo mức độ đang làm việc CPU, có thể dùng lệnh sau
+
+```
+kubectl autoscale rs rsapp --max=2 --min=1
+```
+
+Để liệt kê các hpa gõ lệnh
+```
+kubectl get hpa
+```
+
+Để linh loạt và quy chuẩn, nên tạo ra HPA (HorizontalPodAutoscaler) từ cấu hình file yaml (Tham khảo HPA API )
+```
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: rsapp-scaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: ReplicaSet
+    name: rsapp
+  minReplicas: 5
+  maxReplicas: 10
+  # Thực hiện scale CPU hoạt động ở 50% so với CPU mà POD yêu cầu
+  targetCPUUtilizationPercentage: 50
+```
+
+> Mặc dù có thể sử dụng ReplicaSet một cách độc lập, tuy nhiên trong triển khai hiện nay hay dùng Deployment, với Deployment nó sở hữu một ReplicaSet riêng. Bài tiếp theo sẽ nói về Deployment
 
 ### 1.3 Services
 - [Tham khảo](https://xuanthulab.net/su-dung-service-va-secret-tls-trong-kubernetes.html)
