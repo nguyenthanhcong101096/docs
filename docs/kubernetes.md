@@ -936,8 +936,122 @@ Truy cập
 http://localhost
 ```
 ----------------------
-### 1.5 Volumes 
-Như chúng ta đã biết, hệ thống Kubermetes sẽ tạo ra Pods mới thay thế khi một Pods bị lỗi, chết hay crash. Vậy còn dữ liệu được lưu trong Pods cũ sẽ đi đâu ? Pods mới có lấy lại được dữ liệu của Pods cũ đã mất để tiếp tục sử dụng không ? Khái niệm Voulumes sẽ giúp giải quyết các vấn đề trên.
+
+### 1.5 Daemon set
+- Deamon set hoạt động giống Replica set. Có khả nặng tạo và quản lý các POD. Nó tạo trên mỗi node chỉ có 1 pod
+- Triển khai DaemonSet khi cần ở mỗi máy (Node) một POD, thường dùng cho các ứng dụng như thu thập log, tạo ổ đĩa trên mỗi Node
+
+```
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: daemonset
+  labels:
+    daemon: daemon
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      name: nginx
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        ports:
+          - containerPort: 80
+```
+
+> Mặc định NODE master của kubernetes không cho triển khai chạy các POD trên nó để an toàn, nếu muốn cho phép tạo Pod trên node Master thì xóa đi taint có tên node-role.kubernetes.io/master
+
+```
+# xóa taint trên node master.xtl cho phép tạo Pod
+kubectl taint node master.xtl node-role.kubernetes.io/master-
+
+# thêm taint trên node master.xtl ngăn tạo Pod trên nó
+kubectl taint nodes master.xtl node-role.kubernetes.io/master=false:NoSchedule
+```
+---------------------
+### 1.6 Job
+- Job (jobs) có chức năng tạo các POD đảm bảo nó chạy và kết thúc thành công
+- Khi các POD do Job tạo ra chạy và kết thúc thành công thì Job đó hoàn thành.
+- Khi bạn xóa Job thì các Pod nó tạo cũng xóa theo
+- Một Job có thể tạo các Pod chạy tuần tự hoặc song song
+- Sử dụng Job khi muốn thi hành một vài chức năng hoàn thành xong thì dừng lại `(ví dụ backup, kiểm tra ...)`
+
+```
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: job
+  labels:
+    job: job
+spec:
+  completions: 3               # Số lần chạy POD thành công
+  backoffLimit: 2              # Số lần tạo chạy lại POD bị lỗi, trước khi đánh dấu job thất bại
+  parallelism: 2               # Số POD tạo song song
+  activeDeadlineSeconds: 120   # Số giây tối đa của JOB, quá thời hạn trên hệ thống ngắt JOB
+  template:
+    spec:
+      containers:
+      - name: busybox
+        image: busybox
+        command:
+          - bin/sh
+          - -c
+          - date; echo "Job Executed"
+      restartPolicy: Never
+```
+
+Trong đó:
+- ***completions***: Số lần chạy POD thành công
+- ***backoffLimit***: Số lần tạo chạy lại POD bị lỗi, trước khi đánh dấu job thất bại
+- ***parallelism***: Số POD chạy song song
+- ***activeDeadlineSeconds***: Số giây tối đa của JOB, quá thời hạn trên hệ thống ngắt JOB
+
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes032.png)
+
+----------------------
+### 1.7 CronJob
+- Chạy các Job theo một lịch định sẵn.
+- Việc lên lịch cho CronJob khai báo giống Cron của Linux
+
+```
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cronjob
+  labels:
+    cronjob: cronjob
+spec:
+  schedule: "*/1 * * * *"       # 1 Phút chạy 1 lần
+  successfulJobsHistoryLimit: 3 # Số job lưu lại
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: busybox
+            image: busybox
+            args:
+            - /bin/sh
+            - -c
+            - date; echo "Job in CronJob"
+          restartPolicy: Never
+```
+
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes033.png)
+
+----------------------
+### 1.8 Volumes
+- Như chúng ta đã biết, hệ thống Kubermetes sẽ tạo ra Pods mới thay thế khi một Pods bị lỗi, chết hay crash. Vậy còn dữ liệu được lưu trong Pods cũ sẽ đi đâu ? Pods mới có lấy lại được dữ liệu của Pods cũ đã mất để tiếp tục sử dụng không ? Khái niệm Voulumes sẽ giúp giải quyết các vấn đề trên.
 
 **Volumes** là thành phần trực thuộc Pods. **Volumes** được định nghĩa trong cấu hình file yaml khi khởi tạo các Pods. Các container có thể thực hiện mount dữ liệu bên trong container đến đối tượng **volumes** thuộc cùng Pods.
 
@@ -1030,7 +1144,7 @@ data:
 
 ![](https://images.viblo.asia/2880276d-517f-4a63-b9c2-eada5a54a469.png)
 
-### 1.6 Namespaces
+### 1.8 Namespaces
 Đây là một công cụ dùng để nhóm hoặc tách các nhóm đối tượng. Namespaces được sử dụng để kiểm soát truy cập, kiểm soát truy cập network, quản lý resource và quoting.
 
 ![](https://viblo.asia/uploads/4c1b6382-dda2-43cc-9b0c-0fd91120c7ab.jpg)
