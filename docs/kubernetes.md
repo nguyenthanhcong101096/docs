@@ -8,7 +8,7 @@ sidebar_label: Kubernetes
 
 [API Kubernetes](https://v1-16.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.16/#pod-v1-core)
 ## 1. Khái niệm
-Kubernetes là dự án mã nguồn dể quản lý các container, automating deployment, scaling and manegement các ứng dụng trên container. (Tạo xóa sửa xếp lịch, scale trên nhiều máy) 
+Kubernetes là dự án mã nguồn dể quản lý các container, automating deployment, scaling and manegement các ứng dụng trên container. (Tạo xóa sửa xếp lịch, scale trên nhiều máy)
 
 ### Cài đặt Kubernetes Dashboard On mac
 
@@ -1255,8 +1255,28 @@ Tiến trình:
 - Sau đó trên POD sử dụng volumes là PVC mount tới /data trên container
 
 -----------------------------
+### 1.8 Ingress
+- Là thành phần được dùng để điều hướng các yêu cầu traffic giao thức HTTP và HTTPS từ bên ngoài (interneet) vào các dịch vụ bên trong Cluster.
+- Chỉ để phục vụ các cổng, yêu cầu HTTP, HTTPS còn các loại cổng khác, giao thức khác để truy cập được từ bên ngoài thì dùng Service với kiểu NodePort và LoadBalancer
 
-### 1.8 Namespaces
+![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes047.png)
+
+- Các loại Ingress:
+  - Nếu chọn Ngix Ingress Controller thì cài đặt theo: [NGINX Ingress Controller for Kubernetes.](https://github.com/nginxinc/kubernetes-ingress)
+  - Phần này, chọn loại HAProxy Ingress Controller - [HAProxy Ingress Controller](https://www.haproxy.com/documentation/hapee/1-9r1/traffic-management/kubernetes-ingress-controller/)
+
+#### Cài đặt HAProxy Ingress Controller
+- Ở đậy sử dụng bản custome là [HAProxy Ingress](https://haproxy-ingress.github.io/)
+- Để triển khai thực hiện các bước sau:
+```
+# Tạo namespace có tên ingress-controller
+kubectl create ns ingress-controller
+
+# Triển khai các thành phần
+kubectl apply -f https://haproxy-ingress.github.io/resources/haproxy-ingress.yaml
+```
+-----------------------------
+### 1.9 Namespaces
 Đây là một công cụ dùng để nhóm hoặc tách các nhóm đối tượng. Namespaces được sử dụng để kiểm soát truy cập, kiểm soát truy cập network, quản lý resource và quoting.
 
 ![](https://viblo.asia/uploads/4c1b6382-dda2-43cc-9b0c-0fd91120c7ab.jpg)
