@@ -10,59 +10,19 @@ sidebar_label: Kubernetes
 ## 1. Khái niệm
 Kubernetes là dự án mã nguồn dể quản lý các container, automating deployment, scaling and manegement các ứng dụng trên container. (Tạo xóa sửa xếp lịch, scale trên nhiều máy)
 
-### Cài đặt Kubernetes Dashboard On mac
-
-[Tham khảo](https://medium.com/backbase/kubernetes-in-local-the-easy-way-f8ef2b98be68)
-
-```
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-rc3/aio/deploy/recommended.yaml
-
-kubectl proxy
-```
-
-Now access you can access Dashboard at:
-
-```
-http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/
-```
-
-You will see the following screen:
-
-![](https://miro.medium.com/max/1400/1*Y-Y2_S25E2KieRB1sNVqWA.png)
-
-To find a valid token here you have a useful one-liner
-
-```
-> kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | awk '/^deployment-controller-token-/{print $1}') | awk '$1=="token:"{print $2}'
-
-eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJkZXBsb3ltZW50LWNvbnRyb2xsZXItdG9rZW4tZnp3NzgiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVwbG95bWVudC1jb250cm9sbGVyIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiOWJmOGE4ZDAtZDg1Ny00YzBlLThmNzktZDk3MDEyZDBjMjU5Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50Omt1YmUtc3lzdGVtOmRlcGxveW1lbnQtY29udHJvbGxlciJ9.H_6nQYQ1ltSHUTddNgUjpRHKe82hC-ipL0S_08lK90rWE0hZir9fq1H9LhEyjSgt3QVIYCEiG8qiIqkQO0I2dvQN_CbQHnLl6dmhlrn7astFdu2F621plNQaC6MHfL5YTsTfJEER2sx5qDuEgtZXobWQ8-64w2d6RfHEIFZIxmno8Oj7XccjfBv12p74qyleJYIOBSuglaHyOx8RaDROCkW0OR-9DHa4zlcU28YqW83J3ynxjwqPvu_QzUc5xcycUk1nEfjWZORjH9A1D_Qdj5DNud7g1Pa_HHQZ50LBjIWKmwNLF7CSA-__goCPfWFfcC_gHANhFAfGYeU5sKWz9g
-```
-
-Copy & paste that token into the field and click Sign In to login, the dashboard will show as below:
-
-![](https://miro.medium.com/max/1400/1*LWAiiOJMuMsLkN6S36llDg.png)
-
-
-Now, let us go back to the Dashboard and get to the Pods via the Pods link in the Workloads as shown below:
-
-![](https://miro.medium.com/max/1400/1*ce98Pun7cZMLU9tSXSncAw.png)
-
 ### Tạo Cluster Kubernetes
-
 [Tham Khảo](https://xuanthulab.net/gioi-thieu-va-cai-dat-kubernetes-cluster.html)
-
-Để có một Kubernetes cần có các máy chủ (ít nhất một máy), trên các máy cài đặt Docker và Kubernetes. Một máy khởi tạo là master và các máy khác là worker kết nối vào. Có nhiều cách để có Cluster Kubernetes, như cài đặt minikube để có kubernetes một nút (node) để thực hành (môi trường chạy thử), hay dùng ngay Kubernetes trong Docker Desktop, hay cài đặt một hệ thống đầy đủ (Cài Docker, Cài và khởi tạo Cluster Kubernetes), hay mua từ các nhà cung cấp dịch vụ như Google Cloud Platform, AWS, Azuze ...
 
 #### Tạo Cluster Kubernetes hoàn chỉnh
 Phần này sẽ tạo ra một Cluster Kubernetes hoàn chỉnh từ 3 máy (3 VPS - hay 3 Server) chạy CentOS, bạn có thể dùng cách này khi triển khai môi trường product. Hệ thống này gồm:
 
 Tên máy/Hostname|Thông tin hệ thống|Vai trò
 :--|:--|:--
-master.xtl|	HĐH CentOS7, Docker CE, Kubernetes. Địa chỉ IP 172.16.10.100|	Khởi tạo là master
+master.xtl|  	HĐH CentOS7, Docker CE, Kubernetes. Địa chỉ IP 172.16.10.100|	Khởi tạo là master
 worker1.xtl|	HĐH CentOS7, Docker CE, Kubernetes. Địa chỉ IP 172.16.10.101|	Khởi tạo là worker
 worker2.xtl|	HĐH CentOS7, Docker CE, Kubernetes. Địa chỉ IP 172.16.10.102|	Khởi tạo là worker
 
-Để có hệ thống 3 máy trên khi chưa có điều kiện mua các VPS thực thụ thì sẽ dùng máy ảo VirtualBox. Bạn có thể tải về hệ điều hành CentOS 7, cài đặt từng bước rồi tiến hành cấu hình. Tuy nhiên ở đây, nhằm nhanh chóng sẽ sử dụng Vagrant giúp tự động hóa quá trình tạo 3 máy ảo trên VirtualBox (nếu bạn chưa biết Vagrant thì xem: Sử dụng Vagrant trước). Đây là quá trình cài đặt phức tạp, cố gắng thực hiện tuần tự từng bước!
+Để có hệ thống 3 máy trên khi chưa có điều kiện mua các VPS thực thụ thì sẽ dùng máy ảo VirtualBox
 
 **Hãy tạo ra một thư mục đặt tên kubernetes-centos7 để chứa các file cấu hình Vagrant**
 
@@ -297,32 +257,30 @@ kubeadm token create --print-join-command
 kubeadm join 172.16.10.100:6443 --token 5ajhhs.atikwelbpr0 ...
 ```
 
-#### Cấu hình kubectl máy trạm truy cập đến các Cluster
-Khi thi hành kubectl, thì nó đọc file cấu hình ở đường dẫn $HOME/.kube/config để biết các thông số để kết nối đến Cluster.
+### Cấu hình kubectl máy trạm truy cập đến các Cluster
+K8s đọc file cấu hình ở đường dẫn $HOME/.kube/config để biết các thông số để kết nối đến Cluster.
+```
+kubectl config view
+```
 
-Trở lại máy Host, để xem nội dung cấu hình kubectl gõ lệnh
-
-`kubectl config view`
-
-Tại máy master ở trên, có file cấu hình cho tại `/root/.kube/config`, ta copy file cấu hình này ra lưu thành file `config-mycluster (không ghi đè vào config hiện tại của máy HOST)`
-
-`scp root@172.16.10.100:/etc/kubernetes/admin.conf ~/.kube/config-mycluster`
+Copy file `/root/.kube/config` cấu hình trên máy master về máy tính. Không ghi đè lên file hiện tại
+```
+scp root@172.16.10.100:/etc/kubernetes/admin.conf ~/.kube/config-mycluster
+```
 
 Vậy trên máy của tôi đang có 2 file cấu hình
-
 ```
 /User/your_name/.kube/config-mycluster cấu hình kết nối đến Cluster mới tạo ở trên
 /User/your_name/.kube/config cấu hình kết nối đến Cluster cục bộ của bản Kubernetes có sẵn của Docker
 ```
 
-Nếu muốn yêu cầu kubectl sử dụng ngay file cấu hình nào đó, thì gán biến môi trường KUBECONFIG bằng đường dẫn file cấu hình, ví dụ sử dụng file cấu hình config-mycluster
+Muốn k8s sử dụng file cấu hình nào thì gán biến `KUBECONFIG` đến đường dẫn đó
+```
+export KUBECONFIG=/Users/your_name/.kube/config-mycluster
+```
 
-`export KUBECONFIG=/Users/your_name/.kube/config-mycluster`
-
-Sau lệnh đó thì kubectl sẽ dùng config-mycluster để có thông tin kết nối đến, nhưng trường hợp này chỉ có hiệu lực trong một phiên làm việc, ví dụ nếu bạn đóng terminal và mở lại thì lại phải thiết lập lại biến môi trường như trên.
-
-#### Sử dụng các context trong cấu hình kubectl
-Khi bạn xem nội dung config với lệnh `kubectl config view`, bạn thấy rằng nó khai báo có các mục cluster là thông tin của cluster với tên, user thông tin user được đăng nhập, `context` là ngữ cảnh sử dụng, mỗi ngữ cảnh có tên trong đó có thông tin `user và cluster`.
+### Sử dụng các context trong cấu hình kubectl
+`context` là ngữ cảnh sử dụng, mỗi ngữ cảnh có tên trong đó có thông tin `user và cluster`.
 
 ![](https://raw.githubusercontent.com/xuanthulabnet/learn-kubernetes/master/imgs/kubernetes006.png)
 
