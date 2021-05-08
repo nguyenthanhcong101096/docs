@@ -1082,13 +1082,14 @@ spec:
 
 #### 3. ConfigMap và Secret
 - Trong hệ thống Kubernetes, Config Map và Secret là 2 loại volumes giúp lưu trữ biến môi trường để dùng cho các container thuộc các Pods khác nhau
-- Thông thường khi lập trình các ứng dụng, chúng ta đều cho các biến quan trọng như `password url DB, secret key`, tên DB vào file `.env`
+
+![](https://i2.wp.com/www.docker.com/blog/wp-content/uploads/2019/09/Kubernetes-ConfigMap.png?resize=300%2C407&ssl=1)
 
 ```
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: game-config-env-file
+  name: config-env-file
 data:
   rails_env: production
   allowed: '"true"'
@@ -1106,7 +1107,71 @@ data:
   password: MWYyZDFlMmU2N2Rm
 ```
 
-![](https://images.viblo.asia/2880276d-517f-4a63-b9c2-eada5a54a469.png)
+**Sử dụng ConfigMap với Pod Kubernetes**
+
+Load toàn bộ key-value data của một ConfigMap thành biến môi trường trong 1 Pod app.
+```
+kind: Pod
+apiVersion: v1
+metadata:
+  name: test-pod
+spec:
+  containers:
+    - name: test-container
+      image: k8s.gcr.io/busybox
+      command: [ "/bin/sh", "-c", "env" ]
+      envFrom:
+        - configMapRef:
+            name: config-env-file
+```
+
+Load một giá trị biến môi trường được khai báo trong Pod từ ConfigMap key cụ thể.
+```
+kind: Pod
+apiVersion: v1
+metadata:
+  name: test-pod
+spec:
+  containers:
+    - name: test-container
+      image: k8s.gcr.io/busybox
+      command: [ "/bin/sh", "-c", "env" ]
+      envFrom:
+        - configMapKeyRef:
+            name: config-env-file
+            key: rails_env
+```
+
+Hoặc bạn cũng có thể mount volume file config trong app container từ ConfigMap đấy.
+```
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mysql-cuongquach
+  namespace: default
+spec:
+  template:
+    metadata:
+      labels:
+        app: mysql-cuongquach
+    spec:
+      containers:
+      - image: mysql:5.7
+        name: mysql-cuongquach
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+            - name: mysqld-config
+              mountPath: /etc/mysql/conf.d
+      volumes:
+        - name: mysqld-config
+          configMap:
+             name: cuongquach-db1
+             items:
+              - key: mysqld_config
+                path: my.cnf
+```
 
 #### 4 PersistentVolume && PersistentVolumeClaim
 **PersistentVolume**
