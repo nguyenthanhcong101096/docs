@@ -1,29 +1,20 @@
 ---
 id: ecs
-title: Deploy docker image to AWS ECS
-sidebar_label: Deploy docker image to AWS ECS
+title: AWS ECS ECR
+sidebar_label: AWS ECS ECR
 ---
-
-## What is ECS, ECR ?
-Được gọi tắt là ECS là một service quản lý container có tính scale cao và nhanh. Dễ dàng run, stop, hay quản lý docker container ở trong một cluster. Bạn có thể host một serverless infrastructure bằng cách chạy service hay task sử dụng Fragate launch type.
-
-### ECS features
-Amazon ECS là một dịch vụ theo region, nó đơn giản hoá việc chạy ứng dụng containers trên nhiều AZ trong cùng một Region. Bạn có thể tạo một ECS cluster bên trong một VPC mới hoặc cũ. Sau khi một cluster được khởi tạo và chạy, bạn có thể định nghĩa cá task và services mà nó chỉ định Docker contatainer image sẽ chạy thông qua clusters.
 
 ![](https://images.viblo.asia/8ae392cf-3e6e-4bce-bf4a-fa1f5911a59a.png)
 
-### Container và Images
-Để deploy ứng dụng trên ECS, Các thành phần trong ứng dụng của bạn phải được kiến trúc để chạy containers. Một Docker container là một đơn vị chuẩn của phát triển phần mềm nó chứa tất cả các phần mềm cần thiết để chạy code, runtime, system tools, system libaries … Containers được tạo ra từ read-only template (image)
+## ECS, ECR ?
+ECS là một service quản lý container có tính scale cao và nhanh. Dễ dàng run, stop, hay quản lý docker container ở trong một cluster
 
-![](https://images.viblo.asia/5034bd80-4d9f-4c52-8b5d-6eb0b9b11524.png)
 
-### Task definition
-Task definition là một text file (json format). Nó sẽ mô tả 1 hoặc nhiều container (tối đa là 10) để hình thành nên ứng dụng của bạn. Task definition sẽ chỉ ra một vài parameter cho ứng dụng như container nào sẽ được sử dụng, launch type sẽ được dùng, những port nào sẽ được mở cho ứng dụng và data volume gì sẽ được với containers trong task.
+## Task definition
+Task definition là một text file (json format). Nó sẽ mô tả 1 hoặc nhiều container (tối đa là 10) để hình thành nên ứng dụng của bạn.
 
 ### Task and schedule
 Một task là việc khởi tạo một task definition bên trong cluster. Sau khi bạn tạo một task definition cho ứng dụng trong ECS, bạn có thể chỉ định một lượng task nhất định chạy trên cluster.
-
-Với mỗi một task sử dụng Fargate launch type có một ranh giới riêng biệt và không share kernel, cpu resource, memory, hay elastic network interface với task khác
 
 Amazon ECS task scheduler chịu trách nhiệm cho việc thay thế các task bên trong cluster. Có một vài cách khác nhau để lên schedule cho task
 
@@ -37,8 +28,6 @@ Amazon ECS task scheduler chịu trách nhiệm cho việc thay thế các task 
 ![](https://images.viblo.asia/3489dede-6e8f-415d-90d0-1a501cea6c2f.png)
 
 ### Cluster
-Khi các tasks được chạy trên ECS là khi đó chúng được đặt trong cluster, Khi sử dụng Fargate lauch type với các task bên trong cluster, ECS sẽ quản lý cluster resources. Khi sử dụng EC2 launch type thì các cluster là những group container instances.
-
 Một ECS containter là một instance Amazon EC2 instance mà nó chạy ECS container agent. Amazon ECS download container images của bạn từ registry mà bạn đã setting trước đó sau đó sẽ run những images này trong cluster của bạn
 
 ```
@@ -98,10 +87,7 @@ build docker
 docker build -t yourname:version .
 ```
 
-### 4. Create repository in AWS/ECR(Amazon Elastic Container Registry)
-
-in ecs2
-
+### 4. Tạo Registry ECR(Amazon Elastic Container Registry)
 ```
 aws ecr create-repository --repository-name your_name --region your_region
 ```
@@ -132,7 +118,7 @@ afer create reposity in ecr
 
 #### Create docker tag version
 ```
-docker tag [image_name]:tag [repository ULR o ben tren] 
+docker tag [image_name]:tag [repository ULR o ben tren]
 
 docker tag congttl/ecs:v1 570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/congttl/ecs
 ```
@@ -162,6 +148,9 @@ and then copy and paste to login
 ```
 Dashboard -> ECS -> Task definitions -> Create new task definitions
 ```
+
+**FARGATE**: Không EC2 Instance, giống như serverless
+
 ![](https://fortinetweb.s3.amazonaws.com/docs.fortinet.com/v2/resources/4a43cb9c-f2ee-11e8-b86b-00505692583a/images/721cd423f8f7e0504a92cd7b689b8100_image47.png)
 
 Choose EC2
