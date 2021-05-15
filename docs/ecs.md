@@ -1,33 +1,18 @@
 ---
 id: ecs
-title: AWS ECS ECR
-sidebar_label: AWS ECS ECR
+title: Amazon ECS
+sidebar_label: Amazon ECS
 ---
 
+# Concepts
 ![](https://images.viblo.asia/8ae392cf-3e6e-4bce-bf4a-fa1f5911a59a.png)
-
-## ECS, ECR ?
-ECS là một service quản lý container có tính scale cao và nhanh. Dễ dàng run, stop, hay quản lý docker container ở trong một cluster
-
 
 ## Task definition
 Task definition là một text file (json format). Nó sẽ mô tả 1 hoặc nhiều container (tối đa là 10) để hình thành nên ứng dụng của bạn.
 
-### Task and schedule
-Một task là việc khởi tạo một task definition bên trong cluster. Sau khi bạn tạo một task definition cho ứng dụng trong ECS, bạn có thể chỉ định một lượng task nhất định chạy trên cluster.
+## ECS Service
 
-Amazon ECS task scheduler chịu trách nhiệm cho việc thay thế các task bên trong cluster. Có một vài cách khác nhau để lên schedule cho task
-
-```
-  Service schedule
-  Manually running task
-  Running task on a cron-like schedule
-  Custom scheduler
-```
-
-![](https://images.viblo.asia/3489dede-6e8f-415d-90d0-1a501cea6c2f.png)
-
-### Cluster
+## ECS Cluster
 Một ECS containter là một instance Amazon EC2 instance mà nó chạy ECS container agent. Amazon ECS download container images của bạn từ registry mà bạn đã setting trước đó sau đó sẽ run những images này trong cluster của bạn
 
 ```
