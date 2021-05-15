@@ -4,15 +4,15 @@ title: Amazon ECS
 sidebar_label: Amazon ECS
 ---
 
-# Concepts
+## Concepts
 ![](https://images.viblo.asia/8ae392cf-3e6e-4bce-bf4a-fa1f5911a59a.png)
 
-## Task definition
+### Task definition
 Task definition là một text file (json format). Nó sẽ mô tả 1 hoặc nhiều container (tối đa là 10) để hình thành nên ứng dụng của bạn.
 
-## ECS Service
+### ECS Service
 
-## ECS Cluster
+### ECS Cluster
 Một ECS containter là một instance Amazon EC2 instance mà nó chạy ECS container agent. Amazon ECS download container images của bạn từ registry mà bạn đã setting trước đó sau đó sẽ run những images này trong cluster của bạn
 
 ```
@@ -20,6 +20,77 @@ Cluster là Region-specific
 Cluster có thể chứa nhiều tasks sử dụng cả Fargate và EC2 launch type.
 Cho các task sử dụng EC2 launch type , các clusters có thể chứa nhiều container instance type khác nhau, nhưng mỗi một container instance có thể chỉ là một phần của một cluster tại một thời điểm
 Bạn có thể tạo một custom IAM policy cho cluster cho phép hoặc giới hạn user access tới clusters
+```
+
+## AWSCLI
+### Config aws cli
+```
+[root@ip-172-31-25-132 ~]#    aws configure
+AWS Access Key ID [None]:     AKIATUX6GD4T
+AWS Secret Access Key [None]: 7LbVGuoQzSpsAJ84DSKSInjGs
+Default region name [None]:   ap-southeast-1
+Default output format [None]: json
+```
+
+### Create Docker Repository (ECR)
+```
+aws ecr create-repository --repository-name hello-world:latest --region ap-southeast-1
+
+# Output
+{
+    "repository": {
+        "repositoryUri": "570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/congttl/ecs",
+        "imageScanningConfiguration": {
+            "scanOnPush": false
+        },
+        "registryId": "570604655849",
+        "imageTagMutability": "MUTABLE",
+        "repositoryArn": "arn:aws:ecr:ap-southeast-1:570604655849:repository/congttl/ecs",
+        "repositoryName": "congttl/ecs",
+        "createdAt": 1595079650.0
+    }
+}
+```
+
+### Authenticate to registry
+```
+aws ecr get-login --no-include-email --region ap-southeast-1
+
+# Hoặc
+
+aws ecr get-login-password --region region | docker login --username AWS --password-stdin aws_account_id.dkr.ecr.ap-southeast-1.amazonaws.com
+```
+
+### Create docker tag version
+```
+# Build image trước
+docker build -t hello-world:latest .
+
+
+docker tag [image_name]:tag [repository ULR o ben tren]
+
+docker tag yourname aws_account_id.dkr.ecr.ap-southeast-1.amazonaws.com/hello-world:latest
+```
+
+### Push to repository
+```
+docker push [Repository ULR]
+docker push aws_account_id.dkr.ecr.ap-southeast-1.amazonaws.com/hello-world:latest
+```
+
+### Pull image
+```
+docker pull aws_account_id.dkr.ecr.us-east-1.amazonaws.com/hello-world:latest
+```
+
+### Delete image
+```
+aws ecr batch-delete-image --repository-name hello-world --image-ids imageTag=latest
+```
+
+### Delete a repository
+```
+aws ecr delete-repository --repository-name hello-world --force
 ```
 
 ## Lab
@@ -113,21 +184,6 @@ docker tag congttl/ecs:v1 570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/cong
 docker push [Repository ULR]
 docker push 570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/congttl/ecs
 ```
-
-#### AWS ECR Login
-```
-aws ecr get-login --no-include-email --region ap-southeast-1
-```
-
-```
-[ec2-user@ip]$ aws ecr get-login --no-include-email --region ap-southeast-1
-docker login -u AWS -p eyJwYXlsb2FkIjoibWpRYTBBSkZ0YzVu
-VZTnRKS3VQQzdvVmhsYVRURCtpSXlqcGdwdVNNc05YRlV1emhDQzB6a
-jNaMTVHSW1ZMEJHMWJNUFV3bk5GVHBRanBGd3NkRXI2MzM2RTViRlEy
-mRtSXZ6b3krRDVrQk5KS3VoUTRFREFKSktVM2tKTEJHMGZIdTR0Y1lw
-```
-
-and then copy and paste to login
 
 ### 5.Create Task in AWS/ECS
 ```
