@@ -5,24 +5,193 @@ sidebar_label: Amazon ECS
 ---
 
 ## Concepts
-![](https://images.viblo.asia/8ae392cf-3e6e-4bce-bf4a-fa1f5911a59a.png)
+![](https://cloudgeeks.net/wp-content/uploads/2020/04/Amazon-ECS-Architect.png)
 
 ### Task definition
-Task definition là một text file (json format). Nó sẽ mô tả 1 hoặc nhiều container (tối đa là 10) để hình thành nên ứng dụng của bạn.
+Task definition là một text file (json format) nó giống `docker-compose`. Nó sẽ mô tả 1 hoặc nhiều container (tối đa là 10) để hình thành nên ứng dụng của bạn.
+
+```
+{
+  "ipcMode": null,
+  "executionRoleArn": "arn:aws:iam::570604655849:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "dnsSearchDomains": null,
+      "environmentFiles": null,
+      "logConfiguration": null,
+      "entryPoint": null,
+      "portMappings": [
+        {
+          "hostPort": 80,
+          "protocol": "tcp",
+          "containerPort": 3000
+        }
+      ],
+      "command": null,
+      "linuxParameters": null,
+      "cpu": 0,
+      "environment": [
+        {
+          "name": "DATABASE_HOSTNAME",
+          "value": "database"
+        },
+        {
+          "name": "DATABASE_NAME",
+          "value": "ecs_development"
+        },
+        {
+          "name": "DATABASE_PASSWORD",
+          "value": "password"
+        },
+        {
+          "name": "DATABASE_USER",
+          "value": "root"
+        }
+      ],
+      "resourceRequirements": null,
+      "ulimits": null,
+      "dnsServers": null,
+      "mountPoints": [],
+      "workingDirectory": null,
+      "secrets": null,
+      "dockerSecurityOptions": null,
+      "memory": 512,
+      "memoryReservation": null,
+      "volumesFrom": [],
+      "stopTimeout": null,
+      "image": "570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/rails_app",
+      "startTimeout": null,
+      "firelensConfiguration": null,
+      "dependsOn": null,
+      "disableNetworking": null,
+      "interactive": null,
+      "healthCheck": null,
+      "essential": true,
+      "links": [
+        "database"
+      ],
+      "hostname": null,
+      "extraHosts": null,
+      "pseudoTerminal": null,
+      "user": null,
+      "readonlyRootFilesystem": null,
+      "dockerLabels": null,
+      "systemControls": null,
+      "privileged": null,
+      "name": "app"
+    },
+    {
+      "dnsSearchDomains": null,
+      "environmentFiles": null,
+      "logConfiguration": null,
+      "entryPoint": null,
+      "portMappings": [
+        {
+          "hostPort": 3306,
+          "protocol": "tcp",
+          "containerPort": 3306
+        }
+      ],
+      "command": null,
+      "linuxParameters": null,
+      "cpu": 0,
+      "environment": [
+        {
+          "name": "MYSQL_PASSWORD",
+          "value": "password"
+        },
+        {
+          "name": "MYSQL_ROOT_PASSWORD",
+          "value": "password"
+        },
+        {
+          "name": "MYSQL_USER",
+          "value": "congnt"
+        }
+      ],
+      "resourceRequirements": null,
+      "ulimits": null,
+      "dnsServers": null,
+      "mountPoints": [],
+      "workingDirectory": null,
+      "secrets": null,
+      "dockerSecurityOptions": null,
+      "memory": 512,
+      "memoryReservation": null,
+      "volumesFrom": [],
+      "stopTimeout": null,
+      "image": "570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/mysql_app",
+      "startTimeout": null,
+      "firelensConfiguration": null,
+      "dependsOn": null,
+      "disableNetworking": null,
+      "interactive": null,
+      "healthCheck": null,
+      "essential": true,
+      "links": null,
+      "hostname": null,
+      "extraHosts": null,
+      "pseudoTerminal": null,
+      "user": null,
+      "readonlyRootFilesystem": null,
+      "dockerLabels": null,
+      "systemControls": null,
+      "privileged": null,
+      "name": "database"
+    }
+  ],
+  "placementConstraints": [],
+  "memory": "512",
+  "taskRoleArn": "arn:aws:iam::570604655849:role/ecsTaskExecutionRole",
+  "compatibilities": [
+    "EC2"
+  ],
+  "taskDefinitionArn": "arn:aws:ecs:ap-southeast-1:570604655849:task-definition/rails_task:1",
+  "family": "rails_task",
+  "requiresAttributes": [
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "com.amazonaws.ecs.capability.ecr-auth"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "com.amazonaws.ecs.capability.task-iam-role"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "ecs.capability.execution-role-ecr-pull"
+    }
+  ],
+  "pidMode": null,
+  "requiresCompatibilities": [
+    "EC2"
+  ],
+  "networkMode": "bridge",
+  "cpu": "512",
+  "revision": 1,
+  "status": "ACTIVE",
+  "inferenceAccelerators": null,
+  "proxyConfiguration": null,
+  "volumes": []
+}
+```
 
 ### ECS Service
 
 ### ECS Cluster
-Một ECS containter là một instance Amazon EC2 instance mà nó chạy ECS container agent. Amazon ECS download container images của bạn từ registry mà bạn đã setting trước đó sau đó sẽ run những images này trong cluster của bạn
+Cluster là một nhóm các ECS Container Instance. Amazon ECS xử lý logic của việc lập lịch, duy trì và xử lý các yêu cầu mở rộng quy mô cho các instance này. Các task chạy trên ECS luôn nằm trong cluster.
 
-```
-Cluster là Region-specific
-Cluster có thể chứa nhiều tasks sử dụng cả Fargate và EC2 launch type.
-Cho các task sử dụng EC2 launch type , các clusters có thể chứa nhiều container instance type khác nhau, nhưng mỗi một container instance có thể chỉ là một phần của một cluster tại một thời điểm
-Bạn có thể tạo một custom IAM policy cho cluster cho phép hoặc giới hạn user access tới clusters
-```
+![](https://vticloud.io/wp-content/uploads/2021/02/cluster-amazon-ecs.png)
 
 ## AWSCLI
+[Tham khảo](https://docs.aws.amazon.com/AmazonECR/latest/userguide/getting-started-cli.html)
+
 ### Config aws cli
 ```
 [root@ip-172-31-25-132 ~]#    aws configure
