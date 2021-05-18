@@ -21,8 +21,7 @@ const users = [
 ];
 
 const siteConfig = {
-  title: 'Gist', // Title for your website.
-  tagline: 'A website for testing',
+  title: 'Nguyen Thanh Cong', // Title for your website.
   url: 'https://your-docusaurus-test-site.com', // Your website URL
   baseUrl: '/', // Base URL for your project */
   // For github.io type URLs, you would set the url and baseUrl like:
@@ -46,7 +45,7 @@ const siteConfig = {
   users,
 
   /* path to images for header/footer */
-  headerIcon: 'img/favicon.ico',
+  // headerIcon: 'img/favicon.ico',
   footerIcon: 'img/favicon.ico',
   favicon: 'img/favicon.ico',
 
