@@ -459,3 +459,10 @@ Choose EC2
 
 ![](https://d2908q01vomqb2.cloudfront.net/0716d9708d321ffb6a00818614779e779925365c/2017/11/08/ECSCluster-Empty.png)
 ![](https://d2908q01vomqb2.cloudfront.net/da4b9237bacccdf19c0760cab7aec4a8359010b0/2018/03/26/2018-03-26_06-28-34-1-1024x727.png)
+
+
+## Reference documents
+
+[more-than-hello-world-in-docker-run-rails-sidekiq-web-apps-in-docker](https://dev.to/raphael_jambalos/more-than-hello-world-in-docker-run-rails-sidekiq-web-apps-in-docker-1b37)
+
+[rails-sidekiq-docker-application-for-aws-ecs-ecr-rds-codepipeline](https://salzam.com/rails-sidekiq-docker-application-for-aws-ecs-ecr-rds-codepipeline-and-more-complete-series/)

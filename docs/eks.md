@@ -116,3 +116,6 @@ eksctl delete cluster --region=ap-northeast-1 --name=k8s-demo
 # delete EC2 KeyPair
 aws ec2 delete-key-pair --key-name k8s-demo
 ```
+
+## Reference documents
+[thuc-hanh-set-up-kubernetes-cluster-tren-amazon-web-services](https://viblo.asia/p/thuc-hanh-set-up-kubernetes-cluster-tren-amazon-web-services-elastic-kubernetes-service-Qbq5QQEz5D8)
