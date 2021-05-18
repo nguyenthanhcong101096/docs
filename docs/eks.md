@@ -1,106 +1,118 @@
 ---
 id: eks
-title: Kubernetes on AWS EKS
-sidebar_label: Kubernetes on AWS EKS
+title: Amazon EKS
+sidebar_label: Amazon EKS
 ---
-![](https://codefresh.io/wp-content/uploads/2018/06/Screen-Shot-2018-07-03-at-11.26.41-AM-1024x366.png)
 
-## 1. EKS - Install AWS CLI, kubectl CLI and eksctl CLI
-### 1.1 CLI Introduction
-```
-        ----AWS CLI : we can control multiple AWS services from command line
-        -
-        -
-CLIs  - ----kubectl : we can control Kubernetes cluesters and object using kubectl
-        -
-        -
-        ----eksctl : 1. used for creating & deleting cluseter on AWS EKS
-                     2. we can even create, autoscale and delete node groups
-                     3. wen can even create fargate profiles using eksctl
-```
+## Before you start
 
-### 1.2 Install and configure AWS CLI (MAC)
-```
-# Download Binary
-curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
+> You will need to make sure you have the following components installed and set up before you start with Amazon EKS:
 
-# Install the binary
-sudo installer -pkg ./AWSCLIV2.pkg -target /
+### Install AWS CLI
+```
+# on Unbuntu
+curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
+unzip awscliv2.zip
+sudo ./aws/install
+
+# on Mac
+curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg" sudo installer -pkg AWSCLIV2.pkg -target /
 ```
 
-**Configure AWS Command Line using Security Credentials**
-```
-1. Go to AWS Management Console --> Services --> IAM
-2. Select the IAM User: abc_name or Create IAM
-```
+**Configure your AWS CLI credentials**
 
 ```
 aws configure
-AWS Access Key ID [None]:     ACCESS_KEY
-AWS Secret Access Key [None]: SECRET_KEY
-Default region name [None]:   REGION
-Default output format [None]: json
 ```
 
-### 1.3 Install kubectl CLI
-```
-# Download the Package
-mkdir kubectlbinary
-cd kubectlbinary
-curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.16.8/2020-04-16/bin/darwin/amd64/kubectl
+### Install kubectl
+Kubernetes uses the kubectl command-line utility for communicating with the cluster API server
 
-# Provide execute permissions
+```
+curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.18.8/2020-09-18/bin/linux/amd64/kubectl
 chmod +x ./kubectl
-
-# Set the Path by copying to user Home Directory
-mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
-echo 'export PATH=$PATH:$HOME/bin' >> ~/.bash_profile
-
-# Verify the kubectl version
-kubectl version --short --client
-Output: Client Version: v1.16.8-eks-e16311
+mv ./kubectl /usr/local/bin
 ```
 
-### 1.4 Install eksctl CLI
+### Install eksctl
 ```
-# Install Homebrew on MacOs
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+# on Ubuntu
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+mv /tmp/eksctl /usr/local/bin
 
-# Install the Weaveworks Homebrew tap.
-brew tap weaveworks/tap
 
-# Install the Weaveworks Homebrew tap.
+# on Mac
 brew install weaveworks/tap/eksctl
-
-# Verify eksctl version
-eksctl version
 ```
 
-## 2. EKS - Create Cluster using eksctl
-### 2.1 EKS Cluster Introduction
+## Create EKS Cluster
+EKS Price
+> you may be charged by following this. The most you should be charged should only be a few dollars, but we're not responsible for any incurred charges.
+
+Amazon Web Services provides three main options for deploying Kubernetes:
+
+- Option 1: Fargate - Linux
+- Option 2: Managed Node - Linux
+- Option 3: Self-Managed Node - Windows
+
+### Create SSH key
+> We will first have to create an SSH key to be able to access the EC2 Node in the Cluster when needed (This is also the best practice that Google recommends)
 
 ```
-            ----- EKS Control Plane
-            -
-            ----- Worker Nodes & Node Groups
-            -
-EKS-Cluster -
-            -
-            ----- Fargate Profiles (Serverless)
-            -
-            ----- VPC
+aws ec2 create-key-pair --key-name k8s-demo --query 'KeyMaterial' --output text> k8s-demo.pem
+
+chmod 400 k8s-demo.pem
 ```
 
-### 2.2 Create EKS Cluster
-It will take 15 to 20 minutes to create the Cluster Control Plane
+### Create EKS Cluster
+```
+eksctl create cluster --name k8s-demo --region ap-northwest-1 --nodegroup-name k8s-demo --nodes 2 --node-type t2.micro --ssh-access --ssh-public-key k8s-demo --managed
+```
+
+> AWS CloudFormation để tạo các infrastructure cần thiết và setup Master Node (Control Plane). Khi Master Node đã đi vào hoạt động, thì eksctl sẽ tiếp tục tạo một Node Group để chạy các EC2 Instance. Sau đó các EC2 Instance này sẽ được config và tự động tham gia vào cluster.
+
+> Mặc định: eksctl sẽ tạo 2 Worker Node m5.large để tạo EKS Cluster (m5.large khá rẻ và phổ biến)
+
+### Deploy App to EKS Cluster
+- [Document k8s](https://github.com/nguyenthanhcong101096/docs/blob/master/docs/kubernetes.md)
+- [Prepare manifest](https://github.com/nguyenthanhcong101096/learn_kubernetes/tree/master/manifest)
+
+### Auto deploy via gitlab-ci
+
+create file `.gitlab-ci.yml`
+
+```yml
+variables:
+  REPOSITORY_URL: aws_account_id.dkr.ecr.region.amazonaws.com/demo-app
+  REGION: region
+services:
+- docker:dind
+stages:
+  - build
+  - deploy
+build:
+  stage: build
+  script:
+    - apk add --no-cache curl jq python3 py3-pip
+    - pip install awscli
+    - aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 230470490156.dkr.ecr.ap-southeast-1.amazonaws.com
+    - docker build -t demo-app -f ./Dockerfile .
+    - docker tag demo-app $REPOSITORY_URL.${CI_BUILD_REF}
+    - docker push $REPOSITORY_URL.${CI_BUILD_REF}
+deploy:
+  stage: deploy
+  script:
+    - kubectl set image deployment/server-demo demo-app=$REPOSITORY_URL --record
+  only:
+    - master
+```
+
+### Clear All Resources
 
 ```
-# Create Cluster
-eksctl create cluster --name=eksdemo1 \
-                      --region=us-east-1 \
-                      --zones=us-east-1a,us-east-1b \
-                      --without-nodegroup
+# Please remember to delete all the AWS resources you used to avoid fees
+eksctl delete cluster --region=ap-northeast-1 --name=k8s-demo
 
-# Get List of clusters
-eksctl get clusters
+# delete EC2 KeyPair
+aws ec2 delete-key-pair --key-name k8s-demo
 ```
