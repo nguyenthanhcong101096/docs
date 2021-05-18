@@ -10,6 +10,8 @@ sidebar_label: Amazon ECS
 ### Task definition
 Task definition là một text file (json format) nó giống `docker-compose`. Nó sẽ mô tả 1 hoặc nhiều container (tối đa là 10) để hình thành nên ứng dụng của bạn.
 
+Example task bao gồm reids mysql rails
+
 ```
 {
   "ipcMode": null,
@@ -19,7 +21,9 @@ Task definition là một text file (json format) nó giống `docker-compose`. 
       "dnsSearchDomains": null,
       "environmentFiles": null,
       "logConfiguration": null,
-      "entryPoint": null,
+      "entryPoint": [
+        "./scripts/rails.sh"
+      ],
       "portMappings": [
         {
           "hostPort": 80,
@@ -27,7 +31,7 @@ Task definition là một text file (json format) nó giống `docker-compose`. 
           "containerPort": 3000
         }
       ],
-      "command": null,
+      "command": [],
       "linuxParameters": null,
       "cpu": 0,
       "environment": [
@@ -46,13 +50,25 @@ Task definition là một text file (json format) nó giống `docker-compose`. 
         {
           "name": "DATABASE_USER",
           "value": "root"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "redis://redis"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        },
+        {
+          "name": "REDIS_URL",
+          "value": "redis://redis:6379"
         }
       ],
       "resourceRequirements": null,
       "ulimits": null,
       "dnsServers": null,
       "mountPoints": [],
-      "workingDirectory": null,
+      "workingDirectory": "/rails-on-ecs",
       "secrets": null,
       "dockerSecurityOptions": null,
       "memory": 512,
@@ -68,7 +84,8 @@ Task definition là một text file (json format) nó giống `docker-compose`. 
       "healthCheck": null,
       "essential": true,
       "links": [
-        "database"
+        "database",
+        "redis"
       ],
       "hostname": null,
       "extraHosts": null,
@@ -78,7 +95,7 @@ Task definition là một text file (json format) nó giống `docker-compose`. 
       "dockerLabels": null,
       "systemControls": null,
       "privileged": null,
-      "name": "app"
+      "name": "rails"
     },
     {
       "dnsSearchDomains": null,
@@ -97,22 +114,20 @@ Task definition là một text file (json format) nó giống `docker-compose`. 
       "cpu": 0,
       "environment": [
         {
-          "name": "MYSQL_PASSWORD",
-          "value": "password"
-        },
-        {
           "name": "MYSQL_ROOT_PASSWORD",
           "value": "password"
-        },
-        {
-          "name": "MYSQL_USER",
-          "value": "congnt"
         }
       ],
       "resourceRequirements": null,
       "ulimits": null,
       "dnsServers": null,
-      "mountPoints": [],
+      "mountPoints": [
+        {
+          "readOnly": null,
+          "containerPath": "/var/lib/mysql",
+          "sourceVolume": "db_data"
+        }
+      ],
       "workingDirectory": null,
       "secrets": null,
       "dockerSecurityOptions": null,
@@ -138,6 +153,52 @@ Task definition là một text file (json format) nó giống `docker-compose`. 
       "systemControls": null,
       "privileged": null,
       "name": "database"
+    },
+    {
+      "dnsSearchDomains": null,
+      "environmentFiles": null,
+      "logConfiguration": null,
+      "entryPoint": null,
+      "portMappings": [
+        {
+          "hostPort": 6379,
+          "protocol": "tcp",
+          "containerPort": 6379
+        }
+      ],
+      "command": null,
+      "linuxParameters": null,
+      "cpu": 0,
+      "environment": [],
+      "resourceRequirements": null,
+      "ulimits": null,
+      "dnsServers": null,
+      "mountPoints": [],
+      "workingDirectory": null,
+      "secrets": null,
+      "dockerSecurityOptions": null,
+      "memory": 512,
+      "memoryReservation": null,
+      "volumesFrom": [],
+      "stopTimeout": null,
+      "image": "redis:latest",
+      "startTimeout": null,
+      "firelensConfiguration": null,
+      "dependsOn": null,
+      "disableNetworking": null,
+      "interactive": null,
+      "healthCheck": null,
+      "essential": true,
+      "links": null,
+      "hostname": null,
+      "extraHosts": null,
+      "pseudoTerminal": null,
+      "user": null,
+      "readonlyRootFilesystem": null,
+      "dockerLabels": null,
+      "systemControls": null,
+      "privileged": null,
+      "name": "redis"
     }
   ],
   "placementConstraints": [],
@@ -146,14 +207,20 @@ Task definition là một text file (json format) nó giống `docker-compose`. 
   "compatibilities": [
     "EC2"
   ],
-  "taskDefinitionArn": "arn:aws:ecs:ap-southeast-1:570604655849:task-definition/rails_task:1",
-  "family": "rails_task",
+  "taskDefinitionArn": "arn:aws:ecs:ap-southeast-1:570604655849:task-definition/rails-compose:18",
+  "family": "rails-compose",
   "requiresAttributes": [
     {
       "targetId": null,
       "targetType": null,
       "value": null,
       "name": "com.amazonaws.ecs.capability.ecr-auth"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.17"
     },
     {
       "targetId": null,
@@ -172,13 +239,23 @@ Task definition là một text file (json format) nó giống `docker-compose`. 
   "requiresCompatibilities": [
     "EC2"
   ],
-  "networkMode": "bridge",
+  "networkMode": null,
   "cpu": "512",
-  "revision": 1,
+  "revision": 18,
   "status": "ACTIVE",
   "inferenceAccelerators": null,
   "proxyConfiguration": null,
-  "volumes": []
+  "volumes": [
+    {
+      "fsxWindowsFileServerVolumeConfiguration": null,
+      "efsVolumeConfiguration": null,
+      "name": "db_data",
+      "host": {
+        "sourcePath": "/home/ec2-user/db_data"
+      },
+      "dockerVolumeConfiguration": null
+    }
+  ]
 }
 ```
 
