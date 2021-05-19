@@ -45,7 +45,7 @@ mv /tmp/eksctl /usr/local/bin
 brew install weaveworks/tap/eksctl
 ```
 
-## Create EKS Cluster
+## Create EKS Cluster by eksctl
 EKS Price
 > you may be charged by following this. The most you should be charged should only be a few dollars, but we're not responsible for any incurred charges.
 
