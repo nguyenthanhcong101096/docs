@@ -179,3 +179,6 @@ output "web_addr" {
 - **Terraform plan:** is used to create an execution plan to reach a desired state of the infrastructure. Changes in the configuration files are done in order to achieve the desired state.
 - **Terraform apply:** then makes the changes in the infrastructure as defined in the plan, and the infrastructure comes to the desired state.
 - **Terraform destroy:** is used to delete all the old infrastructure resources, which are marked tainted after the apply phase.
+
+
+## Using Terraform
