@@ -43,6 +43,9 @@ Check IP adress of `ec2-node` on browser will return `nginx page 404`
 kubectl get ns
 kubectl get pod --namespace nginx-ingress
 kubectl apply -f app.yml
+
+# if you have error for admission 443
+kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
 ```
 
 
