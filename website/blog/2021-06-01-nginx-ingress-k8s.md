@@ -34,6 +34,8 @@ kubectl apply -f common/nginx-config.yaml
 
 # Create an IngressClass resource (for Kubernetes >= 1.18)
 kubectl apply -f common/ingress-class.yaml
+
+kubectl apply -f daemon-set/nginx-ingress.yaml
 ```
 
 ### Check and Deploy
