@@ -79,7 +79,9 @@ File app.yml
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: hotel-ingress
+  name: demo-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
@@ -119,10 +121,12 @@ metadata:
   name: demo-ingress
 spec:
   ports:
-  - port: 80
+  - name: http
+    port: 80
     targetPort: 3000
-    protocol: TCP
-    name: http
+  - name: https
+    port: 443
+    targetPort: 3000
   selector:
     app: docs
 ```
