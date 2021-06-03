@@ -50,8 +50,7 @@ kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
 
 
 File app.yml
-```yml
-apiVersion: extensions/v1beta1
+```ymlapiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: hotel-ingress
