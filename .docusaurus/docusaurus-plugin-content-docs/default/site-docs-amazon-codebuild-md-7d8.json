@@ -1,0 +1,26 @@
+{
+  "unversionedId": "amazon/codebuild",
+  "id": "amazon/codebuild",
+  "isDocsHomePage": false,
+  "title": "CodeBuild && Pipeline",
+  "description": "Prepare",
+  "source": "@site/docs/amazon/codebuild.md",
+  "sourceDirName": "amazon",
+  "slug": "/amazon/codebuild",
+  "permalink": "/docs/amazon/codebuild",
+  "editUrl": "https://github.com/nguyenthanhcong101096/docs/amazon/codebuild.md",
+  "version": "current",
+  "sidebarPosition": 7,
+  "frontMatter": {
+    "sidebar_position": 7
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Elastic Kubernetes Service",
+    "permalink": "/docs/amazon/eks"
+  },
+  "next": {
+    "title": "Git Tutorial",
+    "permalink": "/docs/kubernetes/intro"
+  }
+}

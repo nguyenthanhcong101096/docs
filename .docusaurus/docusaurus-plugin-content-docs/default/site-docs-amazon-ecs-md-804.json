@@ -1,0 +1,26 @@
+{
+  "unversionedId": "amazon/ecs",
+  "id": "amazon/ecs",
+  "isDocsHomePage": false,
+  "title": "Elastic Container Service",
+  "description": "Concepts",
+  "source": "@site/docs/amazon/ecs.md",
+  "sourceDirName": "amazon",
+  "slug": "/amazon/ecs",
+  "permalink": "/docs/amazon/ecs",
+  "editUrl": "https://github.com/nguyenthanhcong101096/docs/amazon/ecs.md",
+  "version": "current",
+  "sidebarPosition": 5,
+  "frontMatter": {
+    "sidebar_position": 5
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Lambda và SNS CloudWatch AWS",
+    "permalink": "/docs/amazon/lamda"
+  },
+  "next": {
+    "title": "Elastic Kubernetes Service",
+    "permalink": "/docs/amazon/eks"
+  }
+}

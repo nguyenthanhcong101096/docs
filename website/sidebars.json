@@ -1,7 +1,0 @@
-{
-  "docs": {
-    "Devops": ["docker", "ansible", "kuber", "terraform", "vagrant", "jenkins"],
-    "Amazon": ["elb", "vpc", "rds", "ses", "lambda", "cloud_information", "ecs", "codebuild", "eks"],
-    "Other": ["ruby_style", "cap", "mina", "git"]
-  }
-}

@@ -1,0 +1,25 @@
+{
+  "title": "Recent posts",
+  "items": [
+    {
+      "title": "Sử dụng NGINX làm load balancer",
+      "permalink": "/blog/balancer"
+    },
+    {
+      "title": "Let's Encrypt SSL",
+      "permalink": "/blog/ssl"
+    },
+    {
+      "title": "Steps to Install Kubeadm on Ubuntu",
+      "permalink": "/blog/kubeadm"
+    },
+    {
+      "title": "Minikube Installation on Ubuntu 16.04 LTS",
+      "permalink": "/blog/minikubeancer"
+    },
+    {
+      "title": "Nginx Protecting directories",
+      "permalink": "/blog/httpaccess"
+    }
+  ]
+}

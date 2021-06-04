@@ -1,0 +1,26 @@
+{
+  "unversionedId": "kubernetes/ingess_cert_manger",
+  "id": "kubernetes/ingess_cert_manger",
+  "isDocsHomePage": false,
+  "title": "Ingress-nginx, cert-manager",
+  "description": "Setup ingress nginx",
+  "source": "@site/docs/kubernetes/ingess_cert_manger.md",
+  "sourceDirName": "kubernetes",
+  "slug": "/kubernetes/ingess_cert_manger",
+  "permalink": "/docs/kubernetes/ingess_cert_manger",
+  "editUrl": "https://github.com/nguyenthanhcong101096/docs/kubernetes/ingess_cert_manger.md",
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "sidebar_position": 2
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Git Tutorial",
+    "permalink": "/docs/kubernetes/intro"
+  },
+  "next": {
+    "title": "Terraform",
+    "permalink": "/docs/terraform/intro"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "unversionedId": "amazon/vpc",
+  "id": "amazon/vpc",
+  "isDocsHomePage": false,
+  "title": "Virtual Private Cloud",
+  "description": "Lab1",
+  "source": "@site/docs/amazon/vpc.md",
+  "sourceDirName": "amazon",
+  "slug": "/amazon/vpc",
+  "permalink": "/docs/amazon/vpc",
+  "editUrl": "https://github.com/nguyenthanhcong101096/docs/amazon/vpc.md",
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Tutorial Intro",
+    "permalink": "/docs/intro"
+  },
+  "next": {
+    "title": "Application Load Balancer",
+    "permalink": "/docs/amazon/load_balance"
+  }
+}

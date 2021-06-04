@@ -1,0 +1,26 @@
+{
+  "unversionedId": "amazon/ses",
+  "id": "amazon/ses",
+  "isDocsHomePage": false,
+  "title": "Simple Email Service",
+  "description": "- Deliveries: lượng email đã được gửi đi trong ngày.",
+  "source": "@site/docs/amazon/ses.md",
+  "sourceDirName": "amazon",
+  "slug": "/amazon/ses",
+  "permalink": "/docs/amazon/ses",
+  "editUrl": "https://github.com/nguyenthanhcong101096/docs/amazon/ses.md",
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "sidebar_position": 3
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Application Load Balancer",
+    "permalink": "/docs/amazon/load_balance"
+  },
+  "next": {
+    "title": "Lambda và SNS CloudWatch AWS",
+    "permalink": "/docs/amazon/lamda"
+  }
+}

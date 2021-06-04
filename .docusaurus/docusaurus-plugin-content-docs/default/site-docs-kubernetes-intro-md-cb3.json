@@ -1,0 +1,26 @@
+{
+  "unversionedId": "kubernetes/intro",
+  "id": "kubernetes/intro",
+  "isDocsHomePage": false,
+  "title": "Git Tutorial",
+  "description": "BRANCHES",
+  "source": "@site/docs/kubernetes/intro.md",
+  "sourceDirName": "kubernetes",
+  "slug": "/kubernetes/intro",
+  "permalink": "/docs/kubernetes/intro",
+  "editUrl": "https://github.com/nguyenthanhcong101096/docs/kubernetes/intro.md",
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "CodeBuild && Pipeline",
+    "permalink": "/docs/amazon/codebuild"
+  },
+  "next": {
+    "title": "Ingress-nginx, cert-manager",
+    "permalink": "/docs/kubernetes/ingess_cert_manger"
+  }
+}

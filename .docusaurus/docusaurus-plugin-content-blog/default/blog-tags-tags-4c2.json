@@ -1,0 +1,23 @@
+{
+  "facebook": {
+    "allTagsPath": "/blog/tags",
+    "slug": "facebook",
+    "name": "facebook",
+    "count": 5,
+    "permalink": "/blog/tags/facebook"
+  },
+  "hello": {
+    "allTagsPath": "/blog/tags",
+    "slug": "hello",
+    "name": "hello",
+    "count": 5,
+    "permalink": "/blog/tags/hello"
+  },
+  "docusaurus": {
+    "allTagsPath": "/blog/tags",
+    "slug": "docusaurus",
+    "name": "docusaurus",
+    "count": 5,
+    "permalink": "/blog/tags/docusaurus"
+  }
+}

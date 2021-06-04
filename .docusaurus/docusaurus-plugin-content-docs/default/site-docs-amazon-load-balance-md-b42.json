@@ -1,0 +1,26 @@
+{
+  "unversionedId": "amazon/load_balance",
+  "id": "amazon/load_balance",
+  "isDocsHomePage": false,
+  "title": "Application Load Balancer",
+  "description": "Ưu điểm:",
+  "source": "@site/docs/amazon/load_balance.md",
+  "sourceDirName": "amazon",
+  "slug": "/amazon/load_balance",
+  "permalink": "/docs/amazon/load_balance",
+  "editUrl": "https://github.com/nguyenthanhcong101096/docs/amazon/load_balance.md",
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "sidebar_position": 2
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Virtual Private Cloud",
+    "permalink": "/docs/amazon/vpc"
+  },
+  "next": {
+    "title": "Simple Email Service",
+    "permalink": "/docs/amazon/ses"
+  }
+}
