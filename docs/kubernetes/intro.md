@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 ---
-# Git Tutorial
+# Kubernetes
 ## BRANCHES
 
 ```
