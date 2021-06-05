@@ -45,32 +45,57 @@ kubectl apply -f common/crds/k8s.nginx.org_policies.yaml
 ```
 
 ### Deploy the Ingress Controller
-We include two options for deploying the Ingress controller:
-- Deployment. Use a Deployment if you plan to dynamically change the number of Ingress controller replicas.
-- DaemonSet. Use a DaemonSet for deploying the Ingress controller on every node or a subset of nodes.
+We include two options for deploying the Ingress controller
+
+#### 1. DaemonSet
+Use a DaemonSet for deploying the Ingress controller on every node or a subset of nodes.
+
+> When you run the Ingress Controller by using a DaemonSet, Kubernetes will create an Ingress controller pod on every node of the cluster.
 
 ```
 kubectl apply -f daemon-set/nginx-ingress.yaml
 ```
 
-### Get Access to the Ingress Controller
-`If you created a daemonset`, ports 80 and 443 of the Ingress controller container are mapped to the same ports of the node where the container is running. To access the Ingress controller, use those ports and an IP address of any node of the cluster where the Ingress controller is running.
+##### Get Access to the Ingress Controller
+> ports 80 and 443 of the Ingress controller container are mapped to the same ports of the node where the container is running. To access the Ingress controller, use those ports and an IP address of any node of the cluster where the Ingress controller is running.
 
-`If you created a deployment`, below are two options for accessing the Ingress controller pods.
+#### 2. Deployment
+Use a Deployment if you plan to dynamically change the number of Ingress controller replicas.
+
+> When you run the Ingress Controller by using a Deployment, by default, Kubernetes will create one Ingress controller pod.
+
+```
+kubectl apply -f deployment/nginx-ingress.yaml
+```
+
+##### Get Access to the Ingress Controller
+- Use a NodePort service
+
+```
+kubectl create -f service/nodeport.yaml
+```
+
+- Use a LoadBalancer service
+
+```
+# For GCP or Azure, Digitalocean
+kubectl apply -f service/loadbalancer.yaml
+
+# For AWS
+kubectl apply -f service/loadbalancer-aws-elb.yaml
+```
 
 
 ### Check and Deploy
 Check IP adress of `ec2-node` on browser will return `nginx page 404`
 
 ```
-kubectl get ns
 kubectl get pod --namespace nginx-ingress
-kubectl apply -f app.yml
+kubectl get svc nginx-ingress --namespace=nginx-ingress
 
 # if you have error for admission 443
 kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
 ```
-
 
 File app.yml
 ```yml
@@ -127,6 +152,13 @@ spec:
     targetPort: 3000
   selector:
     app: docs
+```
+
+### Uninstall the Ingress Controller
+```
+kubectl delete namespace nginx-ingress
+kubectl delete clusterrole nginx-ingress
+kubectl delete clusterrolebinding nginx-ingress
 ```
 
 ## Setup cert-manager
