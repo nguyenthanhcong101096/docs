@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: docs
-        image: congttl/docs:latest
+        image: congttl/rails_app:latest
         ports:
         - containerPort: 3000

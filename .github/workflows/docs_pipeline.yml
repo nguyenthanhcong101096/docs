@@ -23,7 +23,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: congttl/rails_app:latest
+          tags: congttl/docs:latest
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
