@@ -48,13 +48,10 @@ jobs:
 
       - name: commit file
         run: |
+          git config --global user.name 'nguyenthanhcong101096'
+          git config --global user.email 'nguyenthanhcong101096@gmail.com'
+          git config --global credential.credentialStore ${{ secrets.TOKEN_GITHUB }}
           git add .
           git commit -am '[skip docker-build] DEV image update'
           git push origin master
 
-# git config --global user.name 'Your Name'
-# git config --global user.email 'your-username@users.noreply.github.com'
-# git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
-# git checkout "${GITHUB_REF:11}"
-# git commit -am "Automated report"
-# git push
