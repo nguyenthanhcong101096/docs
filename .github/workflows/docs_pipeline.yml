@@ -37,7 +37,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: ./.github/actions/my-action
       - uses: docker://continuumio/anaconda3:2019.07
 
       - name: Set tag version
@@ -50,7 +49,7 @@ jobs:
       - name: commit file
         run: |
           git add .
-          git commit -am '[skip ci] DEV image update'
+          git commit -am '[skip docker-build] DEV image update'
           git push origin master
 
 # git config --global user.name 'Your Name'
