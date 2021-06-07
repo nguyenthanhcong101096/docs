@@ -59,15 +59,15 @@ jobs:
       - name: git clone
         run: |
           cd /home
-          
+
           sudo git clone https://github.com/nguyenthanhcong101096/helm_chart.git
       
       - name: update manifest
-        run: docker run --rm -v ${PWD}:/workdir mikefarah/yq:3.2.1 yq write --inplace --verbose helm_chart/values.yaml image.tag ${{ steps.vars.outputs.docker_tag }}
+        run: docker run --rm -v ${PWD}:/workdir mikefarah/yq:3.2.1 yq write --inplace --verbose /home/helm_chart/values.yaml image.tag ${{ steps.vars.outputs.docker_tag }}
 
       - name: git commit & push to helm chart
         run: |
-          cd helm_chart
+          cd /home/helm_chart
           git add .
           git commit -am "Update K8S image"
           git push origin master
