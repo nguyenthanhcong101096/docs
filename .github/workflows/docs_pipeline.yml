@@ -23,7 +23,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: congttl/docs:latest
+          tags: congttl/docs:${{GITHUB_SHA}}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
