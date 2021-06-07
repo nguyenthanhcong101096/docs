@@ -65,6 +65,8 @@ jobs:
 
       - name: git commit & push to helm chart
         run: |
+          rm -rf .git
+          cd helm_chart
           git add .
           git commit -am "Update K8S image"
           git push origin master
