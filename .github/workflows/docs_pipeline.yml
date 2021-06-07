@@ -58,7 +58,7 @@ jobs:
 
       - name: git clone
         run: |
-          cd /home
+          cd /home/ubuntu/
           git clone https://github.com/nguyenthanhcong101096/helm_chart.git
       
       - name: update manifest
