@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       TEST_IMAGE_NAME: ${{ docker-build.steps.vars.outputs.docker_tag }}
-    setps:
+    steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/my-action
       - uses: docker://continuumio/anaconda3:2019.07
