@@ -35,15 +35,13 @@ jobs:
   update-manifest:
     needs: docker-build
     runs-on: ubuntu-latest
-    outputs:
-      TEST_IMAGE_NAME: ${{ docker-build.steps.vars.outputs.docker_tag }}
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/my-action
       - uses: docker://continuumio/anaconda3:2019.07
 
       - name: update file values.yml
-        run: docker run --rm -v ${PWD}:/workdir mikefarah/yq:3.2.1 yq write --inplace --verbose infra/values.yaml image.tag s${{ steps.outputs.TEST_IMAGE_NAME }}
+        run: docker run --rm -v ${PWD}:/workdir mikefarah/yq:3.2.1 yq write --inplace --verbose infra/values.yaml image.tag s${{ docker-build.steps.vars.outputs.docker_tag }}
         run: |
           git add .
           git commit -m "Automated update manifest"
