@@ -18,12 +18,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Set tag var
+        id: vars
+        run: echo ::set-output name=docker_tag::$(echo ${GITHUB_SHA})
+
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: congttl/docs:${{GITHUB_SHA}}
+          tags: congttl/docs:${{ steps.vars.outputs.docker_tag }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
