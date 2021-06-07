@@ -7,7 +7,7 @@ image:
   repository: congttl/docs
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ffa95f489823402ba3f261fe43f62f9b7eb2354f
+  tag: 8bf977e4bc9de5b0a0a27cafa7ef59a516b79683
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
