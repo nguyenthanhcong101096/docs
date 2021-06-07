@@ -63,7 +63,9 @@ jobs:
           sudo git clone https://github.com/nguyenthanhcong101096/helm_chart.git
       
       - name: update manifest
-        run: docker run --rm -v ${PWD}:/workdir mikefarah/yq:3.2.1 yq write --inplace --verbose /home/helm_chart/values.yaml image.tag ${{ steps.vars.outputs.docker_tag }}
+        run: |
+          cd /home/helm_chart
+          docker run --rm -v ${PWD}:/workdir mikefarah/yq:3.2.1 yq write --inplace --verbose values.yaml image.tag ${{ steps.vars.outputs.docker_tag }}
 
       - name: git commit & push to helm chart
         run: |
