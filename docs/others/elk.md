@@ -12,7 +12,7 @@ sidebar_position: 5
 
 **Cơ chế hoạt động của ELK Stack**
 
-![](https://toidicodedao.files.wordpress.com/2018/02/12.png)
+![](https://raw.githubusercontent.com/xuanthulabnet/linux-centos/master/docs/beats-platform.png)
 
 - Đầu tiên, log sẽ được đưa đến Logstash. (Thông qua nhiều con đường, ví dụ như server gửi UDP request chứa log tới URL của Logstash, hoặc Beat đọc file log và gửi lên Logstash)
 - Logstash sẽ đọc những log này, thêm những thông tin như thời gian, IP, parse dữ liệu từ log (server nào, độ nghiêm trọng, nội dung log) ra, sau đó ghi xuống database là Elasticsearch.
