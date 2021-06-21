@@ -9,7 +9,7 @@ Clone the Ingress controller repo and change into the deployments folder:
 ```
 git clone https://github.com/nginxinc/kubernetes-ingress/
 cd kubernetes-ingress/deployments
-git checkout v1.11.0
+git checkout v1.11.3
 ```
 
 ### Configure RBAC
