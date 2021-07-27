@@ -14,8 +14,19 @@ module.exports = {
           position: 'left',
           label: 'Docs',
         },
-        {to: '/blog', label: 'Blog', position: 'left'}
+        {
+          to: '/blog',
+          label: 'Blog', 
+          position: 'left'
+        },
+        {
+          type: 'search',
+          position: 'left',
+        },
       ],
+    },
+    prism: {
+      theme: require('prism-react-renderer/themes/dracula'),
     }
   },
   presets: [
@@ -40,4 +51,7 @@ module.exports = {
       },
     ],
   ],
+  plugins: [
+    require.resolve('@cmfcmf/docusaurus-search-local')
+  ]
 };

@@ -1,32 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0">
     <channel>
-        <title>My Site Blog</title>
+        <title>Tech Note Blog</title>
         <link>https://your-docusaurus-test-site.com/blog</link>
-        <description>My Site Blog</description>
-        <lastBuildDate>Thu, 30 May 2019 00:00:00 GMT</lastBuildDate>
+        <description>Tech Note Blog</description>
+        <lastBuildDate>Thu, 06 May 2021 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <item>
-            <title><![CDATA[Welcome]]></title>
-            <link>https://your-docusaurus-test-site.com/blog/welcome</link>
-            <guid>welcome</guid>
-            <pubDate>Thu, 30 May 2019 00:00:00 GMT</pubDate>
-            <description><![CDATA[Blog features are powered by the blog plugin. Simply add files to the blog directory. It supports tags as well!]]></description>
+            <title><![CDATA[Sử dụng NGINX làm load balancer]]></title>
+            <link>https://your-docusaurus-test-site.com/blog/balancer</link>
+            <guid>balancer</guid>
+            <pubDate>Thu, 06 May 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[Sử dụng NGINX làm load balancer]]></description>
         </item>
         <item>
-            <title><![CDATA[Hello]]></title>
-            <link>https://your-docusaurus-test-site.com/blog/hello-world</link>
-            <guid>hello-world</guid>
-            <pubDate>Wed, 29 May 2019 00:00:00 GMT</pubDate>
-            <description><![CDATA[Welcome to this blog. This blog is created with Docusaurus 2 alpha.]]></description>
+            <title><![CDATA[Let's Encrypt SSL]]></title>
+            <link>https://your-docusaurus-test-site.com/blog/ssl</link>
+            <guid>ssl</guid>
+            <pubDate>Sat, 03 Apr 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[1 Cài đặt Let’s Encrypt]]></description>
         </item>
         <item>
-            <title><![CDATA[Hola]]></title>
-            <link>https://your-docusaurus-test-site.com/blog/hola</link>
-            <guid>hola</guid>
-            <pubDate>Tue, 28 May 2019 00:00:00 GMT</pubDate>
-            <description><![CDATA[Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque elementum dignissim ultricies. Fusce rhoncus ipsum tempor eros aliquam consequat. Lorem ipsum dolor sit amet]]></description>
+            <title><![CDATA[Steps to Install Kubeadm on Ubuntu]]></title>
+            <link>https://your-docusaurus-test-site.com/blog/kubeadm</link>
+            <guid>kubeadm</guid>
+            <pubDate>Mon, 08 Mar 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[Set up Docker]]></description>
+        </item>
+        <item>
+            <title><![CDATA[Minikube Installation on Ubuntu 16.04 LTS]]></title>
+            <link>https://your-docusaurus-test-site.com/blog/minikubeancer</link>
+            <guid>minikubeancer</guid>
+            <pubDate>Sun, 07 Mar 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[Overview:]]></description>
+        </item>
+        <item>
+            <title><![CDATA[Nginx Protecting directories]]></title>
+            <link>https://your-docusaurus-test-site.com/blog/httpaccess</link>
+            <guid>httpaccess</guid>
+            <pubDate>Sun, 24 Jan 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[Log into your server via SSH.]]></description>
         </item>
     </channel>
 </rss>
