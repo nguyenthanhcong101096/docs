@@ -76,7 +76,7 @@ sudo apt-get install nginx
 ```
 
 config file /sites-avaliable/default và restart `sudo service nginx restart`
-```s
+```bash
 # log directory
 #error_log  /etc/nginx/log/error.log;
 #access_log /etc/nginx/log/access.log;
@@ -148,7 +148,7 @@ server {
 ## Script restart rails
 
 Create file deploy.sh và run `chomd +x deploy.sh`
-```sh
+```bash
 #!/bin/bash
 
 PROJECT_PATH=/home/app/deploy

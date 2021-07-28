@@ -3,30 +3,35 @@ sidebar_position: 1
 ---
 
 # Tutorial Intro
-## Getting Started
+### Code Tab
 
-Get started by **creating a new site**.
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-Or **try Docusaurus immediately** with **[new.docusaurus.io](https://new.docusaurus.io)**.
+<Tabs
+  defaultValue="ruby"
+  values={[
+    { label: 'Ruby', value: 'ruby' },
+    { label: 'Go', value: 'go' },
+  ]
+}>
+<TabItem value="ruby">
 
-## Generate a new site
+```ruby
+class Demo
+  def demo
+  end
+end
+```
+</TabItem>
+<TabItem value="go">
 
-Generate a new Docusaurus site using the **classic template**:
+```go
 
-```shell
-npx @docusaurus/init@latest init my-website classic
+import "fmt"
+
+fmt.printLn("hola")
 ```
 
-## Start your site
-
-Run the development server:
-
-```shell
-cd my-website
-
-npx docusaurus start
-```
-
-Your site starts at `http://localhost:3000`.
-
-Open `docs/intro.md` and edit some lines: the site **reloads automatically** and display your changes.
+</TabItem>
+</Tabs>
