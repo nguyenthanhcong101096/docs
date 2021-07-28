@@ -1,11 +1,8 @@
 ---
-sidebar_position: 9
+sidebar_position: 1
 ---
 
-# Tutorial Intro BY AUTO
-
-Let's discover **Docusaurus in less than 5 minutes**.
-
+# Tutorial Intro
 ## Getting Started
 
 Get started by **creating a new site**.

@@ -1,8 +1,8 @@
 ---
-sidebar_position: 8
+sidebar_position: 2
 ---
 
-# NAT - Network Address Translation
+# NAT Gateway
 - **Đặt vấn đề**: Khi bạn có một server trong private subnet không giao tiếp được với internet (ví dụ DB server) nhưng bạn muốn cập nhật phần mềm cho server đó, đây là lúc bạn sử dụng NAT.
 
 > NAT viết tắt cho Network Address Translation là phương pháp thay đổi địa chỉ IP của các tài nguyên private. Khi các tài nguyên private request ra internet, NAT sẽ đổi IP các tài nguyên này thành IP của mình rồi đưa request ra internet, sau khi nhận response trở về từ ngoài internet, NAT sẽ lấy lại IP các tài nguyên nguồn và đưa response vào đó. 

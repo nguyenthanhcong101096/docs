@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# Virtual Private Cloud
+# Concepts VPC
 
 ![](https://d2908q01vomqb2.cloudfront.net/cb4e5208b4cd87268b208e49452ed6e89a68e0b8/2017/02/07/vpc-architecture.png)
 
