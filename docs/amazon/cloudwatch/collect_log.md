@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Simple Email Service
+# Cloudwatch Logs
 
 ![](http://phanmemsaigon.net/wp-content/uploads/2015/02/bao-cao-1.png)
 
