@@ -4,7 +4,7 @@ title: Steps to Install Kubeadm on Ubuntu
 author: congnt
 author_title: BACKEND
 author_url: https://github.com/ttl
-author_image_url: https://avatars0.githubusercontent.com/u/1315101?s=400&v=4
+author_image_url: https://user-images.githubusercontent.com/33750251/60287980-21aa2700-990b-11e9-9c9d-a79874587a86.png
 tags: [facebook, hello, docusaurus]
 ---
 
