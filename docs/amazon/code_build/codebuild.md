@@ -1,7 +1,7 @@
 ---
 sidebar_position: 7
 ---
-# CodeBuild && Pipeline
+# CodePipeline
 ## Prepare
 Example I have Cluster ECS
 - **cluster ecs**     `rails-cluster`
