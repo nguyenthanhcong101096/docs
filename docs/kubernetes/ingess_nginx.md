@@ -1,7 +1,7 @@
 ---
 sidebar_position: 10
 ---
-# Ingress-nginx, cert-manager
+# Ingress nginx
 ## Setup ingress nginx
 ### Prerequisites
 Clone the Ingress controller repo and change into the deployments folder:
