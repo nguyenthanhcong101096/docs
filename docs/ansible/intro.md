@@ -338,6 +338,152 @@ ansible-vault edit passwd.yml
 ansible-vault rekey passwd.yml
 ```
 
+### ROLES
+Nếu bạn có nhiều server hay nhiều group server và mỗi server thực thiện những tasks riêng biệt. Và khi này nếu viết tất cả vào cùng một file playbook thì khá là xấu code và khó để quản lý. Ansible đã cung cấp sẵn chức năng roles, về đơn giản nó sẽ giúp bạn phân chia khu vực với nhiệm vụ riêng biệt.
+
+- Một role phải chứa ít nhất 1 trong 7 thư mục này để Ansible có thể hiểu được đó là 1 role
+- Thường thì mình hay dùng nhất là các thư mục tasks, vars, templates, files
+- **Thành phần**
+  - **tasks** – chứa danh sách các task chính được thực thi trong role này.
+  - **handlers** – chứa các handler, có thể được dùng trong role này hoặc các role khác.
+  - **defaults** – chứa các biến được dùng default cho role này
+  - **vars** – chứa thông tin các biến dùng trong role, biến trong vars sẽ override biến trong default
+  - **files** – chứa các file cần dùng để deploy trong role này, cụ thể như file binary, file cài đặt…
+  - **templates** – chứa các file template theo jinja format đuôi *.j2 (có thể là file config, file systemd…).
+  - **meta** – định nghĩa 1 số metadata của role này, như là dependencies
+
+```yml title="alertmanager"
+alertmanager
+├── README.md
+├── defaults
+│   └── main.yml
+├── files
+│   ├── alertmanager.service
+│   └── notifications.tmpl
+├── handlers
+│   └── main.yml
+├── tasks
+│   └── main.yml
+├── templates
+│   └── alertmanager.yml.j2
+└── vars
+    └── main.yml
+```
+
+- Để dùng 1 role thì ta có thể liệt kê role cần dùng trong 1 play, cụ thể như sau:
+
+```yaml title="ansible-playbook.yml"
+---
+- name: Setup Monitoring Services
+  hosts: prometheus_group
+  become: yes
+  become_user: root
+ 
+  roles:
+    - alertmanager
+```
+
+**Hướng dẫn các bước viết từng folder cụ thể**
+#### Task
+Tasks là nơi ta viết các bước setup cụ thể cho role của chúng ta. Viết như 1 playbook bình thường.
+
+```yml title="tasks/main.yml"
+---
+- name: curl node
+  shell: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+
+- name: install node
+  apt: name=nodejs
+  
+- name: install yarn
+  npm: name=yarn global=yes
+```
+
+#### Defaults/Vars
+Defaults/Vars là nơi để chứa các biến cần thiết cho role. Lưu ý là các biến trong vars sẽ override các biến trong defaults
+
+```yml title="vars/main.yml"
+---
+DATABASE_USER: "congnt"
+DATABASE_PASSWORD: "password"
+```
+
+#### Templates
+Templates là nơi bạn chứa các file config cần điểu chỉnh biến, Ansible sẽ lấy các biến có trong defaults/vars để điền vào file template của các bạn. Dùng folder template bằng module `template`
+
+```yml title="vars/main.yml"
+---
+PORT: "80"
+```
+
+```yml title="templates/service.yml.j2"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service
+spec:
+  type: NodePort
+  selector:
+    app: app
+  ports:
+    - port: 80
+      targetPort: '{{PORT}}'
+      nodePort: '{{PORT}}'
+```
+
+```yml title="tasks/main.yml"
+---
+- name: copy file service.yml
+  template:
+    src: service.yml.j2
+    dest: /kube/manifest
+```
+
+#### Files
+Ta dùng module copy trong playbook để copy các file cần thiết trong folder files mà không cần phải liệt kê đường dẫn tuyệt đối ra (Ansible tự nhận diện đường dẫn).
+
+```yml title="files/service.yml"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service
+spec:
+  type: NodePort
+  selector:
+    app: app
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 80
+```
+
+```yml title="tasks/main.yml"
+---
+- name: copy file service.yml
+  copy:
+    src: service.yml
+    dest: /kube/manifest
+```
+
+#### Handlers
+Handlers dùng để trigger một số thao tác như `reload/restart/start` stop service khi thực hiện một task nào đó trong playbook bằng lệnh `notify`
+
+```yml title="tasks/main.yml"
+---
+- name: install nginx
+  apt: name=nginx state=present
+  notify:
+    - start nginx
+```
+
+```yml title="handlers/main.yml"
+---
+- name: start nginx
+  command: service nginx start
+```
+
 ## Syntax
 ### VARIABLES
 * Biến được sử dụng để lưu trữ các giá trị và có thể thay đổi giá trị được.
@@ -440,51 +586,67 @@ Nhờ vào thuộc tính register, kết quả trả về sẽ được chứa v
  
 **with_items** là một lệnh lặp, thực thi cùng một tác vụ nhiều lần. Mỗi lần chạy, nó lưu giá trị của từng thành phần trong biến item.
 
-### ROLES
-Nếu bạn có nhiều server hay nhiều group server và mỗi server thực thiện những tasks riêng biệt. Và khi này nếu viết tất cả vào cùng một file playbook thì khá là xấu code và khó để quản lý. Ansible đã cung cấp sẵn chức năng roles, về đơn giản nó sẽ giúp bạn phân chia khu vực với nhiệm vụ riêng biệt.
+## Note
+### Inventory Parameters
+- Là các tùy chọn đi kèm với các server, được cấu hình trong file inventory: `/etc/ansible/hosts`
 
-```
-#Simple Ansible setup_application.yml
--
-  name: Set firewall configurations
-  hosts: web
-  vars:
-    http_port: 8081
-    snmp_port: 160-161
-    inter_ip_range: 192.0.2.0
-    
-  tasks:
-    - firewalld:
-        service: https
-        permanent: true
-        state: enabled
-    - firewalld:
-        port: "{{ http_port }}"/tcp
-        permanent: true
-        state: disabled
-    - firewalld:
-        port: "{{ snmp_port }}"/udp
-        permanent: true
-        state: disabled
-    - firewalld:
-        source: "{{ inter_ip_range }}"/24
-        zone: internal
-        state: enabled
-```
+- Note: Ansible 2.0 has deprecated the “ssh” from:
+`ansible_ssh_user`, `ansible_ssh_host`, and `ansible_ssh_port` to become
+`ansible_user`, `ansible_host`, and `ansible_port`.
 
-Mục tiêu của file playbook setup_application.yml này là cấu hình tường lửa cho group server về web. Bây giờ chúng ta sẽ cắt nhỏ file playbook này ra thành những file có chức năng riêng biệt như file chỉ chưa định nghĩa biến, hay file chứa định nghĩa tasks. Trước khi cắt file playbook nhỏ gọn lại, ta cần tạo cấu trúc thư mục như sau để ansible nhận biết được các thành phần ta đã khai báo.
+| Tên | Ý nghĩa |
+|:-----:|:-----:|
+|ansible_connection|Connection type to the host. This can be the name of any of ansible’s connection plugins. SSH protocol types are smart, ssh or paramiko. The default is smart. Non-SSH based types are described in the next section.|
+|ansible_host|The name of the host to connect to, if different from the alias you wish to give to it.|
+|ansible_port|The ssh port number, if not 22|
+|ansible_user|The default ssh user name to use.|
+|ansible_ssh_pass|The ssh password to use (this is insecure, we strongly recommend using --ask-pass or SSH keys)|
+|ansible_ssh_private_key_file|Private key file used by ssh. Useful if using multiple keys and you don’t want to use SSH agent.|
+|ansible_ssh_common_args|This setting is always appended to the default command line for sftp, scp, and ssh. Useful to configure a ProxyCommand for a certain host (or group).|
+|ansible_sftp_extra_args|This setting is always appended to the default sftp command line.|
+|ansible_scp_extra_args|This setting is always appended to the default scp command line.|
+|ansible_ssh_extra_args|This setting is always appended to the default ssh command line.|
+|ansible_ssh_pipelining|Determines whether or not to use SSH pipelining. This can override the pipelining setting in `ansible.cfg`.|
+|ansible_become|Equivalent to ansible_sudo or ansible_su, allows to force privilege escalation|
+|ansible_become_method|Allows to set privilege escalation method|
+|ansible_become_user|Equivalent to `ansible_sudo_user` or `ansible_su_user`, allows to set the user you become through privilege escalation|
+|ansible_become_pass|Equivalent to `ansible_sudo_pass` or `ansible_su_pass`, allows you to set the privilege escalation password|
+|ansible_shell_type|The shell type of the target system. You should not use this setting unless you have set the ansible_shell_executable to a non-Bourne (sh) compatible shell. By default commands are formatted using sh-style syntax. Setting this to csh or fish will cause commands executed on target systems to follow those shell’s syntax instead.|
+|ansible_python_interpreter|The target host python path. This is useful for systems with more than one Python or not located at /usr/bin/python such as *BSD, or where /usr/bin/python is not a 2.X series Python. We do not use the /usr/bin/env mechanism as that requires the remote user’s path to be set right and also assumes the python executable is named python, where the executable might be named something like python2.6.|
+|ansible_*_interpreter|Works for anything such as ruby or perl and works just like ansible_python_interpreter. This replaces shebang of modules which will run on that host.|
+|ansible_shell_executable|This sets the shell the ansible controller will use on the target machine, overrides executable in ansible.cfg which defaults to /bin/sh. You should really only change it if is not possible to use /bin/sh (i.e. /bin/sh is not installed on the target machine or cannot be run from sudo.).|
 
-![](https://drive.google.com/uc?id=1ps-Vm9BkfdlA_2Thm7TW9nuEDSJPJXx4&export=download)
+### Iventory Dynamic
 
+### Ansible.cfg
 
-## Summary
-In short use following options for the ansible-playbook command with vault or without vault file:
+ansible.cfg in the current working directory, .ansible.cfg in the home directory or /etc/ansible/ansible.cfg, whichever it finds first
+- Nội dung mặc định của file ansible.cfg: https://raw.githubusercontent.com/ansible/ansible/devel/examples/ansible.cfg
+- Một số thiết lập trong thẻ [defaults]:
 
-* `-i inventory` : Set path to your inventory file.
-* `--ask-vault-pass` : Ask for vault password
-* `--extra-vars '@passwd.yml'` – Set extra variable. In this case set path to vault file named passwd.yml.
-* `--ask-become-pass` : Ask for sudo password
+| Tên | Ý nghĩa|
+|:---:|:------:|
+|action_plugins| Actions are pieces of code in ansible that enable things like module execution, templating, and so forth.`action_plugins = ~/.ansible/plugins/action_plugins/:/usr/share/ansible_plugins/action_plugins`|
+|ansible_managed| Ansible-managed is a string that can be inserted into files written by Ansible’s config templating system, if you use a string like: `{{ ansible_managed }}`|
+|ask_pass| This controls whether an Ansible playbook should prompt for a password by default. The default behavior is no: `ask_pass=True`|
+|ask_sudo_pass|Similar to ask_pass, this controls whether an Ansible playbook should prompt for a sudo password by default when sudoing. The default behavior is also no: `ask_sudo_pass=True`|
+|ask_vault_pass|This controls whether an Ansible playbook should prompt for the vault password by default. The default behavior is no:`ask_vault_pass=True`|
+|inventory|This is the default location of the inventory file, script, or directory that Ansible will use to determine what hosts it has available to talk to: `inventory = /etc/ansible/hosts`|
+|library|This is the default location Ansible looks to find modules:`library = /usr/share/ansible`|
+|local_tmp|When Ansible gets ready to send a module to a remote machine it usually has to add a few things to the module: Some boilerplate code, the module’s parameters, and a few constants from the config file. This combination of things gets stored in a temporary file until ansible exits and cleans up after itself. The default location is a subdirectory of the user’s home directory. If you’d like to change that, you can do so by altering this setting:`local_tmp = $HOME/.ansible/tmp`|
+|log_path|If present and configured in ansible.cfg, Ansible will log information about executions at the designated location. Be sure the user running Ansible has permissions on the logfile:`log_path=/var/log/ansible.log`|
+|private_key_file|If you are using a pem file to authenticate with machines rather than SSH agent or passwords, you can set the default value here to avoid re-specifying `--private-key` with every invocation:`private_key_file=/path/to/file.pem`|
+|remote_port|This sets the default SSH port on all of your systems, for systems that didn’t specify an alternative value in inventory. The default is the standard 22:`remote_port = 22`|
+|remote_tmp|Ansible works by transferring modules to your remote machines, running them, and then cleaning up after itself. In some cases, you may not wish to use the default location and would like to change the path. You can do so by altering this setting:`remote_tmp = $HOME/.ansible/tmp`|
+|remote_user|This is the default username ansible will connect as for /usr/bin/ansible-playbook. Note that /usr/bin/ansible will always default to the current user if this is not defined:`remote_user = root`|
+|timeout|This is the default SSH timeout to use on connection attempts:`timeout = 10`|
+|sudo_exe|If using an alternative sudo implementation on remote machines, the path to sudo can be replaced here provided the sudo implementation is matching CLI flags with the standard sudo:`sudo_exe=sudo`|
+|sudo_user|This is the default user to sudo to if --sudo-user is not specified or ‘sudo_user’ is not specified in an Ansible playbook. The default is the most logical: ‘root’:`sudo_user=root`|
+|become|The equivalent of adding sudo: or su: to a play or task, set to true/yes to activate privilege escalation. The default behavior is no:`become=True`|
+|become_user|The equivalent to ansible_sudo_user or ansible_su_user, allows to set the user you become through privilege escalation. The default is ‘root’:`become_user=root`|
+|become_ask_pass| Ask for privilege escalation password, the default is False:`become_ask_pass=True`|
 
+- Các thiết lập khác thao khảo tại đây: http://docs.ansible.com/ansible/intro_configuration.html
 
 ## Directiory Layout
 
@@ -534,122 +696,4 @@ roles/
     monitoring/           # ""
     fooapp/               # ""
 Alternative Directory Layout
-```
-
-
-## NOTE
-
-### Inventory Parameters
-- Là các tùy chọn đi kèm với các server, được cấu hình trong file inventory: `/etc/ansible/hosts`
-
-- Note: Ansible 2.0 has deprecated the “ssh” from:
-`ansible_ssh_user`, `ansible_ssh_host`, and `ansible_ssh_port` to become
-`ansible_user`, `ansible_host`, and `ansible_port`.
-
-| Tên | Ý nghĩa |
-|:-----:|:-----:|
-|ansible_connection|Connection type to the host. This can be the name of any of ansible’s connection plugins. SSH protocol types are smart, ssh or paramiko. The default is smart. Non-SSH based types are described in the next section.|
-|ansible_host|The name of the host to connect to, if different from the alias you wish to give to it.|
-|ansible_port|The ssh port number, if not 22|
-|ansible_user|The default ssh user name to use.|
-|ansible_ssh_pass|The ssh password to use (this is insecure, we strongly recommend using --ask-pass or SSH keys)|
-|ansible_ssh_private_key_file|Private key file used by ssh. Useful if using multiple keys and you don’t want to use SSH agent.|
-|ansible_ssh_common_args|This setting is always appended to the default command line for sftp, scp, and ssh. Useful to configure a ProxyCommand for a certain host (or group).|
-|ansible_sftp_extra_args|This setting is always appended to the default sftp command line.|
-|ansible_scp_extra_args|This setting is always appended to the default scp command line.|
-|ansible_ssh_extra_args|This setting is always appended to the default ssh command line.|
-|ansible_ssh_pipelining|Determines whether or not to use SSH pipelining. This can override the pipelining setting in `ansible.cfg`.|
-|ansible_become|Equivalent to ansible_sudo or ansible_su, allows to force privilege escalation|
-|ansible_become_method|Allows to set privilege escalation method|
-|ansible_become_user|Equivalent to `ansible_sudo_user` or `ansible_su_user`, allows to set the user you become through privilege escalation|
-|ansible_become_pass|Equivalent to `ansible_sudo_pass` or `ansible_su_pass`, allows you to set the privilege escalation password|
-|ansible_shell_type|The shell type of the target system. You should not use this setting unless you have set the ansible_shell_executable to a non-Bourne (sh) compatible shell. By default commands are formatted using sh-style syntax. Setting this to csh or fish will cause commands executed on target systems to follow those shell’s syntax instead.|
-|ansible_python_interpreter|The target host python path. This is useful for systems with more than one Python or not located at /usr/bin/python such as *BSD, or where /usr/bin/python is not a 2.X series Python. We do not use the /usr/bin/env mechanism as that requires the remote user’s path to be set right and also assumes the python executable is named python, where the executable might be named something like python2.6.|
-|ansible_*_interpreter|Works for anything such as ruby or perl and works just like ansible_python_interpreter. This replaces shebang of modules which will run on that host.|
-|ansible_shell_executable|This sets the shell the ansible controller will use on the target machine, overrides executable in ansible.cfg which defaults to /bin/sh. You should really only change it if is not possible to use /bin/sh (i.e. /bin/sh is not installed on the target machine or cannot be run from sudo.).|
-
-### Iventory Dynamic
-
-## 4.2 `ansible.cfg`
-
-ansible.cfg in the current working directory, .ansible.cfg in the home directory or /etc/ansible/ansible.cfg, whichever it finds first
-- Nội dung mặc định của file ansible.cfg: https://raw.githubusercontent.com/ansible/ansible/devel/examples/ansible.cfg
-- Một số thiết lập trong thẻ [defaults]:
-
-| Tên | Ý nghĩa|
-|:---:|:------:|
-|action_plugins| Actions are pieces of code in ansible that enable things like module execution, templating, and so forth.`action_plugins = ~/.ansible/plugins/action_plugins/:/usr/share/ansible_plugins/action_plugins`|
-|ansible_managed| Ansible-managed is a string that can be inserted into files written by Ansible’s config templating system, if you use a string like: `{{ ansible_managed }}`|
-|ask_pass| This controls whether an Ansible playbook should prompt for a password by default. The default behavior is no: `ask_pass=True`|
-|ask_sudo_pass|Similar to ask_pass, this controls whether an Ansible playbook should prompt for a sudo password by default when sudoing. The default behavior is also no: `ask_sudo_pass=True`|
-|ask_vault_pass|This controls whether an Ansible playbook should prompt for the vault password by default. The default behavior is no:`ask_vault_pass=True`|
-|inventory|This is the default location of the inventory file, script, or directory that Ansible will use to determine what hosts it has available to talk to: `inventory = /etc/ansible/hosts`|
-|library|This is the default location Ansible looks to find modules:`library = /usr/share/ansible`|
-|local_tmp|When Ansible gets ready to send a module to a remote machine it usually has to add a few things to the module: Some boilerplate code, the module’s parameters, and a few constants from the config file. This combination of things gets stored in a temporary file until ansible exits and cleans up after itself. The default location is a subdirectory of the user’s home directory. If you’d like to change that, you can do so by altering this setting:`local_tmp = $HOME/.ansible/tmp`|
-|log_path|If present and configured in ansible.cfg, Ansible will log information about executions at the designated location. Be sure the user running Ansible has permissions on the logfile:`log_path=/var/log/ansible.log`|
-|private_key_file|If you are using a pem file to authenticate with machines rather than SSH agent or passwords, you can set the default value here to avoid re-specifying `--private-key` with every invocation:`private_key_file=/path/to/file.pem`|
-|remote_port|This sets the default SSH port on all of your systems, for systems that didn’t specify an alternative value in inventory. The default is the standard 22:`remote_port = 22`|
-|remote_tmp|Ansible works by transferring modules to your remote machines, running them, and then cleaning up after itself. In some cases, you may not wish to use the default location and would like to change the path. You can do so by altering this setting:`remote_tmp = $HOME/.ansible/tmp`|
-|remote_user|This is the default username ansible will connect as for /usr/bin/ansible-playbook. Note that /usr/bin/ansible will always default to the current user if this is not defined:`remote_user = root`|
-|timeout|This is the default SSH timeout to use on connection attempts:`timeout = 10`|
-|sudo_exe|If using an alternative sudo implementation on remote machines, the path to sudo can be replaced here provided the sudo implementation is matching CLI flags with the standard sudo:`sudo_exe=sudo`|
-|sudo_user|This is the default user to sudo to if --sudo-user is not specified or ‘sudo_user’ is not specified in an Ansible playbook. The default is the most logical: ‘root’:`sudo_user=root`|
-|become|The equivalent of adding sudo: or su: to a play or task, set to true/yes to activate privilege escalation. The default behavior is no:`become=True`|
-|become_user|The equivalent to ansible_sudo_user or ansible_su_user, allows to set the user you become through privilege escalation. The default is ‘root’:`become_user=root`|
-|become_ask_pass| Ask for privilege escalation password, the default is False:`become_ask_pass=True`|
-
-- Các thiết lập khác thao khảo tại đây: http://docs.ansible.com/ansible/intro_configuration.html
-
-
-## Playbook chuẩn
-```
-production                # inventory file for production servers  
-stage                     # inventory file for stage environment
-
-group_vars/  
-   group1                 # here we assign variables to particular groups
-   group2                 # ""
-host_vars/  
-   hostname1              # if systems need specific variables, put them here
-   hostname2              # ""
-
-library/                  # if any custom modules, put them here (optional)  
-filter_plugins/           # if any custom filter plugins, put them here (optional)
-
-site.yml                  # master playbook  
-webservers.yml            # playbook for webserver tier  
-dbservers.yml             # playbook for dbserver tier
-
-roles/  
-    common/               # this hierarchy represents a "role"
-        tasks/            #
-            main.yml      #  <-- tasks file can include smaller files if warranted
-        handlers/         #
-            main.yml      #  <-- handlers file
-        templates/        #  <-- files for use with the template resource
-            ntp.conf.j2   #  <------- templates end in .j2
-        files/            #
-            bar.txt       #  <-- files for use with the copy resource
-            foo.sh        #  <-- script files for use with the script resource
-        vars/             #
-            main.yml      #  <-- variables associated with this role
-        defaults/         #
-            main.yml      #  <-- default lower priority variables for this role
-        meta/             #
-            main.yml      #  <-- role dependencies
-
-    webtier/              # same kind of structure as "common" was above, done for the webtier role
-    monitoring/           # ""
-    fooapp/               # ""
-
-```
-
-
-Trong đó:
-
-```
-  - production: giống file /etc/ansible/hosts, liệt kê group, host
-  - group_vars/*: đặt các biến chung cho cùng 1 nhóm, ví dụ [webservers] có biến listen_port: 80
-  - host_vars/*: đặt các biến riêng cho từng host
-  - roles/*: đặt các role, ví dụ các host trong [webservers] gọi đến role webtier
 ```
