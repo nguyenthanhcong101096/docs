@@ -33,7 +33,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: congttl/docs:${{ steps.vars.outputs.docker_tag }}
+          tags: congttl/docs:latest
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
