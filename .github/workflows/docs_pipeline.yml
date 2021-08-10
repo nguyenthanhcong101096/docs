@@ -38,35 +38,35 @@ jobs:
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
 
-  update-manifest:
-    needs: docker-build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: docker://continuumio/anaconda3:2019.07
+  # update-manifest:
+  #   needs: docker-build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: docker://continuumio/anaconda3:2019.07
 
-      - name: Set tag version
-        id: vars
-        run: echo ::set-output name=docker_tag::$(echo ${GITHUB_SHA})
+  #     - name: Set tag version
+  #       id: vars
+  #       run: echo ::set-output name=docker_tag::$(echo ${GITHUB_SHA})
 
-      - name: authenticate git
-        run: |
-          git config --global user.name 'nguyenthanhcong101096'
-          git config --global user.email 'nguyenthanhcong101096@gmail.com'
-          git config --global credential.credentialStore ${{ secrets.TOKEN_GITHUB }}
+  #     - name: authenticate git
+  #       run: |
+  #         git config --global user.name 'nguyenthanhcong101096'
+  #         git config --global user.email 'nguyenthanhcong101096@gmail.com'
+  #         git config --global credential.credentialStore ${{ secrets.TOKEN_GITHUB }}
 
-      - name: git clone
-        run: |
-          sudo git clone https://github.com/nguyenthanhcong101096/helm_chart.git
+  #     - name: git clone
+  #       run: |
+  #         sudo git clone https://github.com/nguyenthanhcong101096/helm_chart.git
       
-      - name: update manifest
-        run: |
-          docker run --rm -v ${PWD}:/workdir mikefarah/yq:3.2.1 yq write --inplace --verbose helm_chart/values.yaml image.tag ${{ steps.vars.outputs.docker_tag }}
+  #     - name: update manifest
+  #       run: |
+  #         docker run --rm -v ${PWD}:/workdir mikefarah/yq:3.2.1 yq write --inplace --verbose helm_chart/values.yaml image.tag ${{ steps.vars.outputs.docker_tag }}
 
-      - name: git commit & push to helm chart
-        run: |
-          rm -rf .git
-          cd helm_chart
-          git add .
-          git commit -am "Update K8S image"
-          git push origin master
+  #     - name: git commit & push to helm chart
+  #       run: |
+  #         rm -rf .git
+  #         cd helm_chart
+  #         git add .
+  #         git commit -am "Update K8S image"
+  #         git push origin master
