@@ -2,88 +2,129 @@
 sidebar_position: 2
 ---
 
-# NAT Gateway
-- **Đặt vấn đề**: Khi bạn có một server trong private subnet không giao tiếp được với internet (ví dụ DB server) nhưng bạn muốn cập nhật phần mềm cho server đó, đây là lúc bạn sử dụng NAT.
+# Network Address Translation (NAT)
 
-> NAT viết tắt cho Network Address Translation là phương pháp thay đổi địa chỉ IP của các tài nguyên private. Khi các tài nguyên private request ra internet, NAT sẽ đổi IP các tài nguyên này thành IP của mình rồi đưa request ra internet, sau khi nhận response trở về từ ngoài internet, NAT sẽ lấy lại IP các tài nguyên nguồn và đưa response vào đó. 
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628773215/image-docs/jrFfOpX.png)
 
-![](https://i.imgur.com/jrFfOpX.png)
+**Khi bạn có một server trong private subnet không giao tiếp được với internet (ví dụ DB server) nhưng bạn muốn cập nhật phần mềm cho server đó, đây là lúc bạn sử dụng NAT.**
 
-## Create VPC
-Lúc tạo VPC, mình chọn IPv4 CIDR block là 10.0.0.0/16 để có thể lấy được nhiều địa chỉ IP,
+## Khái niệm
+**Internet Gateway**: là một thành phần của VPC, cho phép giao tiếp giữa VPC và Internet. Nói một cách dễ hiểu hơn là một server trong VPC muốn giao tiếp được với Internet thì cần có Internet Gateway.
 
-- **10.0.0.0**: mình sẽ sử dụng mạng lớp B, tính từ địa chỉ 10.0.0.0 
-- **/16**: tính từ địa chỉ đó, mình muốn lấy 16 bit làm địa chỉ mạng, còn 32 - 16 = 16 bit còn lại làm địa chỉ máy.
+**Network Address Translation (NAT)**: có nghĩa là “dịch địa chỉ mạng”. Như chúng ta đều biết, để kết nối với Internet thì thiết bị cần có một Public IP, nhưng các thiết bị trong mạng private thì không. Vì vậy, NAT sẽ dịch địa chỉ Private IP sang Public IP để kết nối tới Internet nhưng vẫn đảm bảo tính bảo mật cho thiết bị ở mạng private.
 
-![](https://i.imgur.com/YUuqYuL.png)
+**NAT Gateway**: là một thành phần cho phép server ảo trong mạng private có thể kết nối tới Internet hoặc dịch vụ khác của AWS nhưng lại ngăn không cho Internet kết nối đến server đó.
 
-> Chú ý một điều là khi tạo một VPC, mặc định các thành phần Route Table, Network ACL và Security Group sẽ được tạo theo
+## Tạo VPC
+- IPv4 CIDR block là 10.0.0.0/16 để có thể lấy được nhiều địa chỉ IP,
+  - **10.0.0.0**: mình sẽ sử dụng mạng lớp B, tính từ địa chỉ 10.0.0.0 
+  - **/16**: tính từ địa chỉ đó, mình muốn lấy 16 bit làm địa chỉ mạng, còn 32 - 16 = 16 bit còn lại làm địa chỉ máy.
 
-## 1. Create subnet trong VPC
-Mình muốn có 2 subnet, mỗi subnet lấy 24 bit địa chỉ mạng và 8 bit địa chỉ máy:
+- Các thành phần sẽ tạo theo khi tạo **VPC**, 
+  - **Route Table**
+  - **Network ACL**
+  - **Security Group**
 
-- 1 public_subnet có địa chỉ tính từ `00001010.00000000.00000000.00000000` nên CIDR là `10.0.0.0/24`
-- 1 private_subnet có địa chỉ tính từ `00001010.00000000.00000001.00000000` nên CIDR là `10.0.1.0/24`
+[**Create VPC**](https://ap-southeast-1.console.aws.amazon.com/vpc/home?region=ap-southeast-1#CreateVpc:)
 
-**public_subnet**
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628760197/image-docs/Screen_Shot_2021-08-12_at_16.23.00.png)
 
-![](https://i.imgur.com/wAcaJHx.png)
+Như vậy là việc tạo 1 VPC cơ bản là hoàn thành
 
-**private_subnet**
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628760605/image-docs/Screen_Shot_2021-08-12_at_16.29.32.png)
 
-![](https://i.imgur.com/EP8IHS5.png)
+## Subnet
+- Mình muốn có 2 subnet, mỗi subnet lấy 24 bit địa chỉ mạng và 8 bit địa chỉ máy:
+  - 1 public_subnet có địa chỉ tính từ `00001010.00000000.00000000.00000000` nên CIDR là `10.0.0.0/24`
+  - 1 private_subnet có địa chỉ tính từ `00001010.00000000.00000001.00000000` nên CIDR là `10.0.1.0/24`
+
+### Create Public Subnet
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628774195/image-docs/wAcaJHx.png)
+
+### Create Private Subnet
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628774241/image-docs/EP8IHS5.png)
+
+### Modify auto-assign IP
+Đừng quên assign IP
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628761373/image-docs/Screen_Shot_2021-08-12_at_16.42.35.png)
+
+### Tổng kết
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628777143/image-docs/Screen_Shot_2021-08-12_at_21.05.13.png)
 
 
-![](https://i.imgur.com/DaWgMYz.png)
+## Internet Gateway
+### Create Internet Gateway
+[**Create Internet Gateway**](https://ap-southeast-1.console.aws.amazon.com/vpc/home?region=ap-southeast-1#CreateInternetGateway:)
 
-> Warning: Tự động đánh IP để internet (`Action` -> `Modify` -> `Auto-assign public IPv4 address`)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628761577/image-docs/Screen_Shot_2021-08-12_at_16.46.03.png)
+
+### Attach to VPC
+Chọn vào IG đã tạo rồi click **Attach to VPC**
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628761716/image-docs/Screen_Shot_2021-08-12_at_16.48.12.png)
+
+Select **VPC** đã tạo ở task 1 để attach rồi nhấn Attach
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628761800/image-docs/Screen_Shot_2021-08-12_at_16.49.46.png)
+
+## NAT gateway
+### Cấu hình
+  - **Subnet**: chọn một **public subnet** đã tạo. NAT gateway sẽ kết nối tới Internet, vì vậy NAT gateway sẽ ở trong public subnet.
+  - **Elastic IP allocation ID**: để NAT gateway có thể kết nối với Internet thì nó cần một Public IP. Do vậy ta cần assign EIP bằng cách chọn “Allocate Elastic IP”
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628775678/image-docs/Screen_Shot_2021-08-12_at_20.40.38.png)
 
 
-- Thông thường với 8 bit đánh địa chỉ máy, ta có `2^8 - 2 = 256 - 2` máy nhưng ngoài 2 IP địa chỉ subnet và địa chỉ broadcast ra, aws còn sử dụng thêm 3 IP nữa nên số IP địa chỉ máy chúng ta có thể có = `256 - 5 = 251` IP như hình trên. Ví dụ với `CIDR 10.0.1.0/24` thì 5 địa chỉ IP mà aws sử dụng là
+## Route Table
+Tạo 2 route table
+- Public : cho **public subnet** và **internet gateway**
+- Private: cho **private subnet** và **nat gateway**
 
-  - `10.0.1.0`: Network address, là địa chỉ subnet.
-  - `10.0.1.1`: Sử dụng cho VPC router.
-  - `10.0.1.2`: Sử dụng cho DNS trong VPC.
-  - `10.0.1.3`: AWS lưu trữ để phòng trường hợp sử dụng trong tương lai.
-  - `10.0.1.255`: Địa chỉ broadcast.
+### Public route table
 
-## 2. Create internet gateway cho VPC
-Khi tạo Internet Gateway (ký hiệu IGW), IGW này sẽ có trạng thái là Detached tức là chưa gắn vào VPC nào:
+Public route table cho phép các thành phần trong public subnet có thể giao tiếp được với internet
 
-![](https://i.imgur.com/HblPxVS.png)
+[**Create Route**](https://ap-southeast-1.console.aws.amazon.com/vpc/home?region=ap-southeast-1#CreateRouteTable:)
 
-> Chú ý là một VPC chỉ có thể gắn một Internet Gateway
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628777434/image-docs/Screen_Shot_2021-08-12_at_21.10.05.png)
 
-## 3. Create Route Table public subnet & private public
-Ta có 2 `route table`: `private_route` và `public_route`
+#### Add Route
+```
+Destination: 0.0.0.0/0 
+Target: Là cổng Internet Gateway cho public subnet
+```
 
-- Khi tạo VPC, default `Route Table` sẽ được tạo theo, ta muốn `default Route Table` này sẽ là gọi là `private_route`
-- Ta cần tạo một public Route Table mới để có thể tuỳ chọn lúc cần `public` các tài nguyên ra internet sẽ gọi là `public_route`
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628762632/image-docs/Screen_Shot_2021-08-12_at_17.03.39.png)
 
-Bạn để ý Main Route Table của chúng ta đang là private, điều này tránh cho những vấn đề bảo mật khi ai đó tạo resource trên aws và để subnet mặc định.
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628762755/image-docs/Screen_Shot_2021-08-12_at_17.05.42.png)
 
-![](https://i.imgur.com/guzhcR1.png)
+#### Add Subnet Associations 
+- Để chỉ định **public subnet** nào apply route đã tạo đó
 
-Ta tạo `Subnet Associations` cho public subnet tới route table `public_route`
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628762903/image-docs/Screen_Shot_2021-08-12_at_17.08.02.png)
 
-![](https://i.imgur.com/eQ5VVjM.png)
+- Gắn **public Subnet** rồi nhấn **Save Associations**
 
-Bạn cần thêm route record như sau để Route Table có thể điều hướng traffic từ mọi IP trên internet có thể đi tới Internet Gateway VPC của bạn
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628777679/image-docs/Screen_Shot_2021-08-12_at_21.14.11.png)
 
-![](https://i.imgur.com/sKT5L0e.png)
+### Private route table
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628777828/image-docs/Screen_Shot_2021-08-12_at_21.16.17.png)
+#### Add Route
+```
+Destination: 0.0.0.0/0 
+Target: Là cổng NAT Gateway cho public subnet
+```
 
-## 4. Create nat gateway cho VPC
-Bạn cũng phải tạo `NAT Gateway` trong public subnet(`step 1: public_subnet`)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628777940/image-docs/Screen_Shot_2021-08-12_at_21.18.12.png)
 
-![](https://i.imgur.com/0pEdERD.png)
+#### Add Subnet Associations
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628778270/image-docs/Screen_Shot_2021-08-12_at_21.23.59.png)
 
-- Click `Allocate Elesticc IP`
-
-- Ta cũng phải thêm `record` vào `Route Table` của `private_route`(step 3)
-
-![](https://i.imgur.com/cgAe0vu.png)
-
-> Thử ssh vào public_instance và ssh vào private_instance: yum update
+## Check
+Thử ssh vào public_instance và ssh vào private_instance: yum update
 
 ## 5. Create Network Access Control List for subnet
 - [Link](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Scenario2.html#nacl-rules-scenario-2)
@@ -91,3 +132,4 @@ Bạn cũng phải tạo `NAT Gateway` trong public subnet(`step 1: public_subne
 ## 6. References
 - [su-dung-nat-trong-aws](https://blog.daovanhung.com/post/su-dung-nat-trong-aws#2.2.-NAT-Gateway)
 - [tao-vpc-va-subnetting-trong-aws](https://blog.daovanhung.com/post/tao-vpc-va-subnetting-trong-aws)
+- [internet-gate-way-nat-gateway](https://co-well.vn/nhat-ky-cong-nghe/thanh-phan-mang-co-ban-tren-aws-p2-internet-gate-way-nat-gateway-route-tables/)
