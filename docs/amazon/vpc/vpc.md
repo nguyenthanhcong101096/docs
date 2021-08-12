@@ -124,11 +124,9 @@ Target: Là cổng IG đã tạo ở task 3
 > Tiếp theo của part 1, bài viết này sẽ tiếp tục thực hiện các phần còn lại của bài lab bên dưới
 
 **Review lại Part 1**
-![](https://images.viblo.asia/retina/bc5191a3-c0af-40f1-83be-ec075e817b8a.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628764821/image-docs/bc5191a3-c0af-40f1-83be-ec075e817b8a.png)
 
 Trong đó chỉ có 2 Public Subnet Group được route tới Internet Getway và thực tế thì chưa hề có instance nào cả.
-
-### Mục tiêu
 
 - **Task 5:** Tạo Security Group sử dụng cho Web Server
 - **Task 6:** Tạo 1 EC2 đóng vai trò là 1 Web Server đặt ở Public Subnet
