@@ -123,8 +123,12 @@ Target: Là cổng NAT Gateway cho public subnet
 #### Add Subnet Associations
 ![](https://res.cloudinary.com/ttlcong/image/upload/v1628778270/image-docs/Screen_Shot_2021-08-12_at_21.23.59.png)
 
-## Check
-Thử ssh vào public_instance và ssh vào private_instance: yum update
+## Note
+- Vì NAT chỉ sủ dụng ở local, không có internet đi vào. nên chỉ ssh vào ec2 nằm trong vpc đó thôi
+
+- Dùng chung Security Group
+
+- Thử ssh vào public_instance và ssh vào private_instance: yum update
 
 ## 5. Create Network Access Control List for subnet
 - [Link](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Scenario2.html#nacl-rules-scenario-2)
