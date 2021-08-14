@@ -1,468 +1,140 @@
 ---
-sidebar_position: 5
+sidebar_position: 2
 ---
 
-# Elastic Container Service
+# ECS Cluster with ELB
 
-## Concepts
-![](https://cloudgeeks.net/wp-content/uploads/2020/04/Amazon-ECS-Architect.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628950445/image-docs/nlbECS_1.png)
 
-### Task definition
-Task definition là một text file (json format) nó giống `docker-compose`. Nó sẽ mô tả 1 hoặc nhiều container (tối đa là 10) để hình thành nên ứng dụng của bạn.
+## 1. Virtual Private Cloud
+### Create VPC
+- **IPv4 CIDR block: 10.0.0.0/16** => Cái này là dải IP version 4 mà mình chỉ định cho VPC của mình
 
-Example task bao gồm reids mysql rails
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628760197/image-docs/Screen_Shot_2021-08-12_at_16.23.00.png)
 
-```
-{
-  "ipcMode": null,
-  "executionRoleArn": "arn:aws:iam::570604655849:role/ecsTaskExecutionRole",
-  "containerDefinitions": [
-    {
-      "dnsSearchDomains": null,
-      "environmentFiles": null,
-      "logConfiguration": null,
-      "entryPoint": [
-        "./scripts/rails.sh"
-      ],
-      "portMappings": [
-        {
-          "hostPort": 80,
-          "protocol": "tcp",
-          "containerPort": 3000
-        }
-      ],
-      "command": [],
-      "linuxParameters": null,
-      "cpu": 0,
-      "environment": [
-        {
-          "name": "DATABASE_HOSTNAME",
-          "value": "database"
-        },
-        {
-          "name": "DATABASE_NAME",
-          "value": "ecs_development"
-        },
-        {
-          "name": "DATABASE_PASSWORD",
-          "value": "password"
-        },
-        {
-          "name": "DATABASE_USER",
-          "value": "root"
-        },
-        {
-          "name": "REDIS_HOST",
-          "value": "redis://redis"
-        },
-        {
-          "name": "REDIS_PORT",
-          "value": "6379"
-        },
-        {
-          "name": "REDIS_URL",
-          "value": "redis://redis:6379"
-        }
-      ],
-      "resourceRequirements": null,
-      "ulimits": null,
-      "dnsServers": null,
-      "mountPoints": [],
-      "workingDirectory": "/rails-on-ecs",
-      "secrets": null,
-      "dockerSecurityOptions": null,
-      "memory": 512,
-      "memoryReservation": null,
-      "volumesFrom": [],
-      "stopTimeout": null,
-      "image": "570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/rails_app",
-      "startTimeout": null,
-      "firelensConfiguration": null,
-      "dependsOn": null,
-      "disableNetworking": null,
-      "interactive": null,
-      "healthCheck": null,
-      "essential": true,
-      "links": [
-        "database",
-        "redis"
-      ],
-      "hostname": null,
-      "extraHosts": null,
-      "pseudoTerminal": null,
-      "user": null,
-      "readonlyRootFilesystem": null,
-      "dockerLabels": null,
-      "systemControls": null,
-      "privileged": null,
-      "name": "rails"
-    },
-    {
-      "dnsSearchDomains": null,
-      "environmentFiles": null,
-      "logConfiguration": null,
-      "entryPoint": null,
-      "portMappings": [
-        {
-          "hostPort": 3306,
-          "protocol": "tcp",
-          "containerPort": 3306
-        }
-      ],
-      "command": null,
-      "linuxParameters": null,
-      "cpu": 0,
-      "environment": [
-        {
-          "name": "MYSQL_ROOT_PASSWORD",
-          "value": "password"
-        }
-      ],
-      "resourceRequirements": null,
-      "ulimits": null,
-      "dnsServers": null,
-      "mountPoints": [
-        {
-          "readOnly": null,
-          "containerPath": "/var/lib/mysql",
-          "sourceVolume": "db_data"
-        }
-      ],
-      "workingDirectory": null,
-      "secrets": null,
-      "dockerSecurityOptions": null,
-      "memory": 512,
-      "memoryReservation": null,
-      "volumesFrom": [],
-      "stopTimeout": null,
-      "image": "570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/mysql_app",
-      "startTimeout": null,
-      "firelensConfiguration": null,
-      "dependsOn": null,
-      "disableNetworking": null,
-      "interactive": null,
-      "healthCheck": null,
-      "essential": true,
-      "links": null,
-      "hostname": null,
-      "extraHosts": null,
-      "pseudoTerminal": null,
-      "user": null,
-      "readonlyRootFilesystem": null,
-      "dockerLabels": null,
-      "systemControls": null,
-      "privileged": null,
-      "name": "database"
-    },
-    {
-      "dnsSearchDomains": null,
-      "environmentFiles": null,
-      "logConfiguration": null,
-      "entryPoint": null,
-      "portMappings": [
-        {
-          "hostPort": 6379,
-          "protocol": "tcp",
-          "containerPort": 6379
-        }
-      ],
-      "command": null,
-      "linuxParameters": null,
-      "cpu": 0,
-      "environment": [],
-      "resourceRequirements": null,
-      "ulimits": null,
-      "dnsServers": null,
-      "mountPoints": [],
-      "workingDirectory": null,
-      "secrets": null,
-      "dockerSecurityOptions": null,
-      "memory": 512,
-      "memoryReservation": null,
-      "volumesFrom": [],
-      "stopTimeout": null,
-      "image": "redis:latest",
-      "startTimeout": null,
-      "firelensConfiguration": null,
-      "dependsOn": null,
-      "disableNetworking": null,
-      "interactive": null,
-      "healthCheck": null,
-      "essential": true,
-      "links": null,
-      "hostname": null,
-      "extraHosts": null,
-      "pseudoTerminal": null,
-      "user": null,
-      "readonlyRootFilesystem": null,
-      "dockerLabels": null,
-      "systemControls": null,
-      "privileged": null,
-      "name": "redis"
-    }
-  ],
-  "placementConstraints": [],
-  "memory": "512",
-  "taskRoleArn": "arn:aws:iam::570604655849:role/ecsTaskExecutionRole",
-  "compatibilities": [
-    "EC2"
-  ],
-  "taskDefinitionArn": "arn:aws:ecs:ap-southeast-1:570604655849:task-definition/rails-compose:18",
-  "family": "rails-compose",
-  "requiresAttributes": [
-    {
-      "targetId": null,
-      "targetType": null,
-      "value": null,
-      "name": "com.amazonaws.ecs.capability.ecr-auth"
-    },
-    {
-      "targetId": null,
-      "targetType": null,
-      "value": null,
-      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.17"
-    },
-    {
-      "targetId": null,
-      "targetType": null,
-      "value": null,
-      "name": "com.amazonaws.ecs.capability.task-iam-role"
-    },
-    {
-      "targetId": null,
-      "targetType": null,
-      "value": null,
-      "name": "ecs.capability.execution-role-ecr-pull"
-    }
-  ],
-  "pidMode": null,
-  "requiresCompatibilities": [
-    "EC2"
-  ],
-  "networkMode": null,
-  "cpu": "512",
-  "revision": 18,
-  "status": "ACTIVE",
-  "inferenceAccelerators": null,
-  "proxyConfiguration": null,
-  "volumes": [
-    {
-      "fsxWindowsFileServerVolumeConfiguration": null,
-      "efsVolumeConfiguration": null,
-      "name": "db_data",
-      "host": {
-        "sourcePath": "/home/ec2-user/db_data"
-      },
-      "dockerVolumeConfiguration": null
-    }
-  ]
-}
-```
+---
 
-### ECS Service
+### Create Subnet public
 
-### ECS Cluster
-Cluster là một nhóm các ECS Container Instance. Amazon ECS xử lý logic của việc lập lịch, duy trì và xử lý các yêu cầu mở rộng quy mô cho các instance này. Các task chạy trên ECS luôn nằm trong cluster.
-
-![](https://vticloud.io/wp-content/uploads/2021/02/cluster-amazon-ecs.png)
-
-## AWSCLI
-[Tham khảo](https://docs.aws.amazon.com/AmazonECR/latest/userguide/getting-started-cli.html)
-
-### Config aws cli
-```
-[root@ip-172-31-25-132 ~]#    aws configure
-AWS Access Key ID [None]:     AKIATUX6GD4T
-AWS Secret Access Key [None]: 7LbVGuoQzSpsAJ84DSKSInjGs
-Default region name [None]:   ap-southeast-1
-Default output format [None]: json
-```
-
-### Create Docker Repository (ECR)
-```
-aws ecr create-repository --repository-name hello-world:latest --region ap-southeast-1
-
-# Output
-{
-    "repository": {
-        "repositoryUri": "570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/congttl/ecs",
-        "imageScanningConfiguration": {
-            "scanOnPush": false
-        },
-        "registryId": "570604655849",
-        "imageTagMutability": "MUTABLE",
-        "repositoryArn": "arn:aws:ecr:ap-southeast-1:570604655849:repository/congttl/ecs",
-        "repositoryName": "congttl/ecs",
-        "createdAt": 1595079650.0
-    }
-}
-```
-
-### Authenticate to registry
-```
-aws ecr get-login --no-include-email --region ap-southeast-1
-
-# Hoặc
-
-aws ecr get-login-password --region region | docker login --username AWS --password-stdin aws_account_id.dkr.ecr.ap-southeast-1.amazonaws.com
-```
-
-### Create docker tag version
-```
-# Build image trước
-docker build -t hello-world:latest .
-
-
-docker tag [image_name]:tag [repository ULR o ben tren]
-
-docker tag yourname aws_account_id.dkr.ecr.ap-southeast-1.amazonaws.com/hello-world:latest
-```
-
-### Push to repository
-```
-docker push [Repository ULR]
-docker push aws_account_id.dkr.ecr.ap-southeast-1.amazonaws.com/hello-world:latest
-```
-
-### Pull image
-```
-docker pull aws_account_id.dkr.ecr.us-east-1.amazonaws.com/hello-world:latest
-```
-
-### Delete image
-```
-aws ecr batch-delete-image --repository-name hello-world --image-ids imageTag=latest
-```
-
-### Delete a repository
-```
-aws ecr delete-repository --repository-name hello-world --force
-```
-
-## Lab
-
-### 1. Create IAM uesr and Instance EC2
-- User need create IAM uesrs with permissions:
-  - AmazonEC2ContainerRegistryFullAccess
-  - AmazonECS_FullAccess
+#### Public Subnet 1
 
 ```
-create groupA(include 2 permission) -> create user IAM to groupA
+VPC ID: lựa chọn VPC đã create ở Task 1
+
+Availability Zone: ap-southeast-1a
+
+IPv4 CIDR block: 10.0.1.0/24 => Chỗ này là dải IP version 4 của subnet
 ```
 
-- Download access_key
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628760935/image-docs/Screen_Shot_2021-08-12_at_16.35.21.png)
 
-### 2. Config aws cli
-In EC2 or Machine install awscli
-```
-sudo apt install awscli
-```
+Chọn vào button và click **Modify auto-assign IP settings**
 
-```
-[root@ip-172-31-25-132 ~]#    aws configure
-AWS Access Key ID [None]:     AKIATUX6GD4T
-AWS Secret Access Key [None]: 7LbVGuoQzSpsAJ84DSKSInjGs
-Default region name [None]:   ap-southeast-1
-Default output format [None]: json
-```
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628761303/image-docs/Screen_Shot_2021-08-12_at_16.41.27.png)
 
-### 3. Create docker image
-![](https://miro.medium.com/max/700/0*2PMeWkEkscO5C-1l.png)
+Click button **Auto-assign IPv4** và nhấn Save
 
-create file index.html
-```
-<html>
-<head><title>HOW TO DEPLOY DOCKER</title></head>
-<body><h1>CONG NT</h1></body>
-</html>
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628761373/image-docs/Screen_Shot_2021-08-12_at_16.42.35.png)
+
+---
+#### Public Subnet 2
 
 ```
-create file Dockerfile
-```
-FROM nginx
+VPC ID: lựa chọn VPC đã create ở Task 1
 
-COPY index.html /usr/share/nginx/html
-```
+Availability Zone: ap-southeast-1b
 
-build docker
-```
-docker build -t yourname:version .
+IPv4 CIDR block: 10.0.2.0/24 => Chỗ này là dải IP version 4 của subnet
 ```
 
-### 4. Tạo Registry ECR(Amazon Elastic Container Registry)
-```
-aws ecr create-repository --repository-name your_name --region your_region
-```
+Tương tự tạo public subnet 1
 
-or in dashboard aws
+---
+
+### Create Internet Gateway
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628761577/image-docs/Screen_Shot_2021-08-12_at_16.46.03.png)
+
+Chọn vào IG đã tạo rồi click **Attach to VPC**
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628761716/image-docs/Screen_Shot_2021-08-12_at_16.48.12.png)
+
+Select **VPC** đã tạo ở task 1 để attach rồi nhấn Attach
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628761800/image-docs/Screen_Shot_2021-08-12_at_16.49.46.png)
+
+---
+
+### Create Route Table
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628762412/image-docs/Screen_Shot_2021-08-12_at_16.59.57.png)
+
+**Tab Route**
+
+- Sau khi tạo được Route table thì tiến hành thiết lập route theo ý muốn (giống như tiến hành lắp ráp các ống dẫn nước để điều hướng dòng chảy vậy). 
+
+- Chọn vào tab Routes bên dưới màn hình Route table rồi chọn **Edit Route**
+
+- Chọn **add route** với cấu hình rồi click Save routes
 
 ```
-dashboard -> ecs -> repository -> create repository
-```
-
-afer create reposity in ecr
-```
-[ec2-user@ip]$ aws ecr create-repository --repository-name congttl/ecs --region ap-southeast-1
-{
-    "repository": {
-        "repositoryUri": "570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/congttl/ecs", 
-        "imageScanningConfiguration": {
-            "scanOnPush": false
-        }, 
-        "registryId": "570604655849", 
-        "imageTagMutability": "MUTABLE", 
-        "repositoryArn": "arn:aws:ecr:ap-southeast-1:570604655849:repository/congttl/ecs", 
-        "repositoryName": "congttl/ecs", 
-        "createdAt": 1595079650.0
-    }
-}
-```
-
-#### Create docker tag version
-```
-docker tag [image_name]:tag [repository ULR o ben tren]
-
-docker tag congttl/ecs:v1 570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/congttl/ecs
+Destination: 0.0.0.0/0 
+Target: Là cổng IG đã tạo ở task 3
 ```
 
-#### Push to AWS/ECR
-```
-docker push [Repository ULR]
-docker push 570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/congttl/ecs
-```
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628762632/image-docs/Screen_Shot_2021-08-12_at_17.03.39.png)
 
-### 5.Create Task in AWS/ECS
-```
-Dashboard -> ECS -> Task definitions -> Create new task definitions
-```
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628762755/image-docs/Screen_Shot_2021-08-12_at_17.05.42.png)
 
-**FARGATE**: Không EC2 Instance, giống như serverless
+**Tab Subnet Associations**
+- Sau khi tạo route thành công thì còn phải tạo Subnet Associations để chỉ định subnet nào apply route đã tạo đó. Chọn tab Subnet Associations rồi click Edit Subnet Associations
 
-![](https://fortinetweb.s3.amazonaws.com/docs.fortinet.com/v2/resources/4a43cb9c-f2ee-11e8-b86b-00505692583a/images/721cd423f8f7e0504a92cd7b689b8100_image47.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628762903/image-docs/Screen_Shot_2021-08-12_at_17.08.02.png)
 
-Choose EC2
+- Click chọn **public Subnet** đã tạo ở task 2 rồi nhấn **Save Associations**
 
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2019/12/27125404/002-6.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628762980/image-docs/Screen_Shot_2021-08-12_at_17.09.12.png)
 
-### 6. Create cluster
-![](https://www.cloudtp.com/wp-content/uploads/2016/05/2.2.png)
+---
 
-- choose EC2 Linux + Networking to Deploy
+## 2. IAM Role
+### Role EC2 Instances
+Tạo Role **ecsInstanceRole**
 
-![](https://d1.awsstatic.com/PAC/ECS-Step1b.05c8b038ef29d98e52b1eeb60d66f45b8a26a62f.png)
+- Chọn **Role** -> **Create Role**
+- Cấu hình
+  - **AWS service**
+  - **Elastic Container Service**
+  - **EC2 Role for Elastic Container Service**
 
-- Input information and Create
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628955009/image-docs/Screen_Shot_2021-08-14_at_22.29.53.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628954935/image-docs/Screen_Shot_2021-08-14_at_22.28.44.png)
+### Role ECS Cluster
+Tạo Role **ecsRole**
 
-![](https://hazelcast.com/wp-content/uploads/blog-archive/2018/12/configure-cluster-1.png)
+- Chọn **Role** -> **Create Role**
+- Cấu hình
+  - **AWS service**
+  - **Elastic Container Service**
+  - **Elastic Container Service**
 
-#### 6.1 Create Service cluster
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628957044/image-docs/Screen_Shot_2021-08-14_at_23.03.56.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628956980/image-docs/Screen_Shot_2021-08-14_at_23.02.50.png)
 
-![](https://d2908q01vomqb2.cloudfront.net/0716d9708d321ffb6a00818614779e779925365c/2017/11/08/ECSCluster-Empty.png)
-![](https://d2908q01vomqb2.cloudfront.net/da4b9237bacccdf19c0760cab7aec4a8359010b0/2018/03/26/2018-03-26_06-28-34-1-1024x727.png)
+## 3. ECS Cluster
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628957205/image-docs/Screen_Shot_2021-08-14_at_23.06.30.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628958671/image-docs/Screen_Shot_2021-08-14_at_23.30.57.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628958735/image-docs/Screen_Shot_2021-08-14_at_23.32.00.png)
 
+## 4. ECS Instance
+- Tạo 2 instance_ami: **ami-01eadf33e58113fa2**
+- Cấu hình
+  - vpc: tạo ở bước 1
+  - subnet: tạo ở bước 1
+  - IAM Role: tao ở bước 2
 
-## Reference documents
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628956072/image-docs/Screen_Shot_2021-08-14_at_22.41.36.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1628956332/image-docs/Screen_Shot_2021-08-14_at_22.51.32.png)
 
-[more-than-hello-world-in-docker-run-rails-sidekiq-web-apps-in-docker](https://dev.to/raphael_jambalos/more-than-hello-world-in-docker-run-rails-sidekiq-web-apps-in-docker-1b37)
+- Sau khi tạo xong ssh vào instance check **docker ps**
 
-[rails-sidekiq-docker-application-for-aws-ecs-ecr-rds-codepipeline](https://salzam.com/rails-sidekiq-docker-application-for-aws-ecs-ecr-rds-codepipeline-and-more-complete-series/)
+## 5. LoadBalancer
