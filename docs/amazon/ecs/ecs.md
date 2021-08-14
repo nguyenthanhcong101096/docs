@@ -138,3 +138,9 @@ Tạo Role **ecsRole**
 - Sau khi tạo xong ssh vào instance check **docker ps**
 
 ## 5. LoadBalancer
+### Tạo Certificate SSL
+
+## 6. Deploy Service
+### Task definition
+### Service
+
