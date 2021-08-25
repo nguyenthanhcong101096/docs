@@ -1,18 +1,42 @@
 ---
-sidebar_position: 7
+sidebar_position: 3
 ---
 # CodePipeline
-## Prepare
-Example I have Cluster ECS
-- **cluster ecs**     `rails-cluster`
-- **task definition** `rails-compose`
+CodePipeline là dịch vụ AWS cho phép chúng ta xây dựng qui trình khiển khai ứng dụng một cách liên tục và tự động. Với cách thức cấu hình đơn giản
 
-## Codebuild
-- [tham khảo](https://salzam.com/create-codedeploy-for-rails-and-sidekiq-task-definition/)
-### Create buildspec files
-Create the `buildspec-rails.yml` on the root directory of our rails application
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629863477/image-docs/E3_82_B9_E3_82_AF_E3_83_AA_E3_83_BC_E3_83_B3_E3_82_B7_E3_83_A7_E3_83_83_E3_83_88-2020-04-22-7.28.51.png)
 
-```yml
+## Khái niệm
+### Pipeline
+là một qui trình - workflow mô tả một chuỗi các bước thực hiện từ việc thay đổi source code đến khi tích hợp và triển khai những thay đổi này sang môi trường sản phẩm.
+
+### Stage
+mô tả mỗi bước thực hiện trong Pipeline. Stage thường hoạt động trong một môi trường độc lập, thực hiện những xử lý dựa trên input artifact.
+
+### Transition
+là mốc dịch chuyển giữa việc thực thi của các stages trong một pipeline. Việc kiểm soát transition (enable / disable) cho phép chúng ta thực hiện các xác nhận cần thiết trước khi quyết định tiếp tục việc triển khai.
+
+### Artifact 
+được phân chia thành hai loại:
+
+- Input artifact: được sử dụng để thực thi các hoạt động trong một stage. Ví dụ: source code là input artifact - được biên dịch / kiểm thử bởi các câu lệnh build stage.
+- Output artifact: là kết quả được tạo ra bởi các hoạt động trong một stage. Ví dụ: các lệnh trong build stage tạo ra Test Report, Log, hoặc Docker Image.
+
+
+:::tip
+Output Artifacts từ một stage có thể được sử dụng làm Input Artifact trong stage tiếp theo. Ví dụ, build stage tạo ra Docker Image, deploy stage sử dụng Docker Image để cài đặt / triển khai trong ECS Cluster.
+:::
+
+## CodePipeline
+- [Tham khảo](https://salzam.com/create-codepipeline-for-rails-project/)
+
+### Chuẩn bị môi trường
+- [Tạo ECS](/docs/amazon/ecs/ecs)
+  - **cluster ecs**     `rails-cluster`
+  - **task definition** `rails-compose`
+
+- Update [CodeBuild](/docs/amazon/continuous_delivery/codebuild#tạo-buildspec-files)
+```yml title="buildspec.yml"
 version: 0.2
 
 phases:
@@ -43,41 +67,7 @@ artifacts:
     files: imagedefinitions.json
 ```
 
-### Create build project
-> Go to CodeBuild from AWS service tab and click on `Create build project`
-
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/03215742/005-8-1024x605.png)
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/03215802/006-6-1024x649.png)
-
-> Connect to your github repository and allow AWS access.
-
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/03215834/007-5-1024x822.png)
-
-> After selecting my repository, I have also selected master branch. You can change it as per your requirements
-
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/03215855/009-4-1024x938.png)
-
-> Make sure you select Privileged mode otherwise we won’t be able to build our Docker Image.
-
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/03215953/010-4-1024x343.png)
-
-> Keep a note of the service role we have created above
-
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/03225813/buildspec-rails-1024x451.png)
-
-> we are using buildspec-rails.yml in this codebuild.
-
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/03220026/012-2-1024x845.png)
-
-> Just using simple caching options to speed up our build process.
-
-**Adjustments to Service Role**
-Add role: `AmazonEC2ContainerRegistryFullAccess, AmazonECS_FullAccess`
-
-## Pipeline
-- [Tham khảo](https://salzam.com/create-codepipeline-for-rails-project/)
-### Create code pipeline
-> Go to CodePipeline from AWS service tab and click on Create Pipeline
+### Tạo code pipeline
 
 - Setting
 
