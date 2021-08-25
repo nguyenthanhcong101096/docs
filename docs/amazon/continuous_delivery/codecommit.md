@@ -89,8 +89,7 @@ aws codecommit create-repository --repository-name FriendReminders --repository-
 git clone ssh://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/FriendReminders
 ```
 
-## Tích hợp Repository và AWS SNS / Subscribers
-Trong phần này, chúng ta sẽ kết hợp dịch vụ AWS Simple Notification Service (SNS) và CodeCommit Repository. Mỗi khi source code trên main branch trong Repository thay đổi, message tự động gửi đến một SNS Topic. Thành phần này đóng vai trò trung gian giữa publisher và subcribers. Trong trường hợp này, CodeCommit là một publisher gửi message đến SNS Topic thông báo source code thay đổi. Những subcribers trên SNS Topic sẽ nhận được message và thực hiện những xử lý tương ứng.
+## Simple Notification Service SNS
 
 ![](https://res.cloudinary.com/ttlcong/image/upload/v1629818834/image-docs/cicd1.png)
 
@@ -102,7 +101,7 @@ Dựa trên yêu cầu từ AWS Lambda, CodeBuild service thực hiện quá tr�
 
 Trong nội dung của phần thực hành này, chúng ta chỉ tập trung vào thiết lập liên kết giữa CodeCommit với SNS / Subcribers (Email Notification, Lambda). Logic của hàm Lambda đơn giản là ghi một dummy log xuống CloudWatch Log mỗi khi source code có sự thay đổi.
 
-### Simple Notification Service
+### Create SNS
 
 <Tabs
   defaultValue="awscli"
@@ -124,6 +123,8 @@ Output
   "TopicArn": "arn:aws:sns:ap-southeast-2:729365137003:PushMainBranchReminderFriendsTopic"
 }
 ```
+
+### Create trigger code commit
 
 </TabItem>
 <TabItem value="awsconsole">
@@ -213,7 +214,7 @@ aws codecommit get-repository-triggers --repository-name FriendReminders
 
 ![](https://res.cloudinary.com/ttlcong/image/upload/v1629819901/image-docs/trigger.png)
 
-### Tạo SNS Subscriber Email
+### Subscriber Email
 <Tabs
   defaultValue="awscli"
   values={[
@@ -251,4 +252,212 @@ More info: https://console.aws.amazon.com/codesuite/codecommit/repositories/Frie
 Branches: master
 ```
 
-### Tạo SNS Subscriber Lambda
+### Subscriber Lambda
+Trong ví dụ này, chúng ta kết hợp trigger từ “sự kiện” source code trên main branch của CodeCommit Repository được cập nhật, từ đó thực thi Python Lambda function để in ra thông tin dummy log trên màn hình Terminal hoặc CloudWatch.
+
+#### 1. Tạo Role Lambda
+
+- Để function có quyền thực thi và ghi log ra CloudWatch, chúng ta cần định nghĩa một service role. Service role cho phép chúng ta khai báo principal (trong trường hợp này là Lamba function) và bổ sung các policy vào service role cho phép principal có quyền sử dụng các tài nguyên khác trên AWS.
+
+<Tabs
+  defaultValue="awscli"
+  values={[
+    { label: 'awscli', value: 'awscli' },
+    { label: 'awsconsole', value: 'awsconsole' },
+  ]
+}>
+<TabItem value="awscli">
+
+```json title="trust-policy.json"
+// cho phép service principal lambda.amazonaws.com
+// sử dụng dịch vụ AWS STS (Security Token Service) để có được - assume permission trong các policy attach vào service role
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
+```
+# sử dụng lệnh create-role để tạo service role CodeBuildTriggerLambdaRole
+aws iam create-role --role-name CodeBuildTriggerLambdaRole --assume-role-policy-document file://trust-policy.json
+```
+
+```json title="output"
+{
+  "Role": {
+    "Path": "/",
+    "RoleName": "CodeBuildTriggerLambdaRole",
+    "RoleId": "AROA2TUMMYZVVW5UQX7S4",
+    "Arn": "arn:aws:iam::729365137003:role/CodeBuildTriggerLambdaRole",
+    "CreateDate": "2020-09-04T03:28:52+00:00",
+    "AssumeRolePolicyDocument": {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": {
+              "Service": "lambda.amazonaws.com"
+          },
+          "Action": "sts:AssumeRole"
+        }
+      ]
+    }
+  }
+}
+```
+
+- Bổ sung Policy **AWSLambdaBasicExecutionRole** vào service role **CodeBuildTriggerLambdaRole**
+- Nội dung policy AWSLambdaBasicExecutionRole cho phép một lambda function ghi thông tin ra AWS CloudWatch, nội dung trong policy
+
+```json title="policy"
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+```
+aws iam attach-role-policy --role-name CodeBuildTriggerLambdaRole --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+```
+
+</TabItem>
+<TabItem value="awsconsole">
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629853506/image-docs/Screen_Shot_2021-08-25_at_8.04.46.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629853576/image-docs/Screen_Shot_2021-08-25_at_8.06.06.png)
+
+</TabItem>
+</Tabs>
+
+#### 2. Tạo Lambda
+<Tabs
+  defaultValue="awscli"
+  values={[
+    { label: 'awscli', value: 'awscli' },
+    { label: 'awsconsole', value: 'awsconsole' },
+  ]
+}>
+<TabItem value="awscli">
+
+- Tạo một folder lambda-function chứa source code và cấu hình cho Lambda project.
+- Tạo zip file chứa **lambda_function.py**: `zip function.zip lambda_function.py`
+
+```py title="lambda-function/lambda_function.py"
+import os
+
+def entrypoint(event, context):
+    print('Starting a new build ...')
+    print('## ENVIRONMENT VARIABLES')
+    print(os.environ)
+    print('## EVENT')
+    print(event)
+```
+
+- Để triển khai Lambda function lên AWS, trong folder Clambda-function
+
+```
+# create lambada
+aws lambda create-function --function-name CodeBuildTriggerLambda \
+--zip-file fileb://function.zip \
+--runtime python3.8 \
+--handler lambda_function.entrypoint \
+--role arn:aws:iam::729365137003:role/CodeBuildTriggerLambdaRole
+```
+
+```
+# update lambada
+aws lambda update-function-code --function-name CodeBuildTriggerLambda --zip-file fileb://function.zip
+```
+
+</TabItem>
+<TabItem value="awsconsole">
+
+[link create](https://ap-southeast-1.console.aws.amazon.com/lambda/home?region=ap-southeast-1#/create/function)
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629854223/image-docs/Screen_Shot_2021-08-25_at_8.16.51.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629854502/image-docs/Screen_Shot_2021-08-25_at_8.21.28.png)
+
+</TabItem>
+</Tabs>
+
+#### 3. Thực thi Lambda
+
+<Tabs
+  defaultValue="awscli"
+  values={[
+    { label: 'awscli', value: 'awscli' },
+    { label: 'awsconsole', value: 'awsconsole' },
+  ]
+}>
+<TabItem value="awscli">
+
+```
+# Thực thi project và hiển thị log trên màn hình Terminal:
+
+aws lambda invoke --function-name CodeBuildTriggerLambda  out --log-type Tail \
+--query 'LogResult' --output text |  base64 -d
+```
+
+</TabItem>
+<TabItem value="awsconsole">
+
+</TabItem>
+</Tabs>
+
+- Kết quả hiển thị tương tự trên AWS Console, CloudWatch -> CloudWatchLogs
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629855328/image-docs/cloudwatch.png)
+
+#### 4. Tạo Subcribe Lambda với SNS Topic
+<Tabs
+  defaultValue="awscli"
+  values={[
+    { label: 'awscli', value: 'awscli' },
+    { label: 'awsconsole', value: 'awsconsole' },
+  ]
+}>
+<TabItem value="awscli">
+
+```
+aws sns subscribe --topic arn:aws:sns:ap-southeast-2:729365137003:PushMainBranchReminderFriendsTopic --protocol lambda --notification-endpoint arn:aws:lambda:ap-southeast-2:729365137003:function:CodeBuildTriggerLambda
+```
+
+- Bổ sung permission cho phép SNS service gọi đến Lamda function
+
+```
+aws lambda add-permission --function-name CodeBuildTriggerLambda --action "lambda:InvokeFunction" --statement-id sns --principal sns.amazonaws.com --region ap-southeast-2 --source-arn arn:aws:sns:ap-southeast-2:729365137003:PushMainBranchReminderFriendsTopic
+```
+
+</TabItem>
+<TabItem value="awsconsole">
+
+</TabItem>
+</Tabs>
+
+### Kiểm ra kết quả subscription
+- Trong FriendReminders, thay đổi source code và push lên CodeCommit
+- Xác nhận Email Notification trong địa chỉ Email Subscriber
+- Xác nhận AWS Lambda function thực thi trong CloudWatch Logs
+
+
+:::tip
+Bằng cách thực thi Lambda function mỗi khi Source Code thay đổi thông qua CodeCommit Trigger và SNS Topic, chúng ta có thể mở rộng logic của Lambda function này, cho phép kích hoạt quá trình biên dịch và triển khai với các dịch vụ khác như AWS CodeBuild, hoặc CodeDeploy. Có thể tham khảo thêm cách thức sử dụng CodeBuildTriggerLambda trong bài thực hành CodeBuild
+:::
