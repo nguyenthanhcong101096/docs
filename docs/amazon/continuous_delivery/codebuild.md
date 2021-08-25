@@ -42,8 +42,8 @@ phases:
     commands:
       - echo Logging in to Amazon ECR...
       - aws --version
-      - aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 570604655849.dkr.ecr.your-region.amazonaws.com
-      - REPOSITORY_URI=570604655849.dkr.ecr.ap-southeast-1.amazonaws.com/nginx
+      - aws ecr get-login-password --region your-region | docker login --username AWS --password-stdin account_id.dkr.ecr.your-region.amazonaws.com
+      - REPOSITORY_URI=account_id.dkr.ecr.your-region.amazonaws.com/rails_app
       - TIME_STAMP=$( date +%s )
   build:
     commands:
@@ -58,6 +58,8 @@ phases:
       - docker push $REPOSITORY_URI:v$TIME_STAMP
       - echo Writing image definitions file...
       - printf '[{"name":"rails","imageUri":"%s"}]' $REPOSITORY_URI:v$TIME_STAMP > imagedefinitions.json
+artifacts:
+    files: imagedefinitions.json
 ```
 
 Commit và Push `buildspec.yml` lên CodeCommit Repository FriendReminders.

@@ -1,10 +1,10 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 ---
 # CodePipeline
 CodePipeline là dịch vụ AWS cho phép chúng ta xây dựng qui trình khiển khai ứng dụng một cách liên tục và tự động. Với cách thức cấu hình đơn giản
 
-![](https://res.cloudinary.com/ttlcong/image/upload/v1629863477/image-docs/E3_82_B9_E3_82_AF_E3_83_AA_E3_83_BC_E3_83_B3_E3_82_B7_E3_83_A7_E3_83_83_E3_83_88-2020-04-22-7.28.51.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629880958/image-docs/php-project-release-pipeline-1536x758.png)
 
 ## Khái niệm
 ### Pipeline
@@ -31,45 +31,16 @@ Output Artifacts từ một stage có thể được sử dụng làm Input Arti
 - [Tham khảo](https://salzam.com/create-codepipeline-for-rails-project/)
 
 ### Chuẩn bị môi trường
-- [Tạo ECS](/docs/amazon/ecs/ecs)
+- [ECS Cluster](/docs/amazon/ecs/ecs) Hoặc [CodeBuild](/docs/amazon/continuous_delivery/codepdeploy)
+- Ví dụ này dùng ECS
   - **cluster ecs**     `rails-cluster`
   - **task definition** `rails-compose`
+  - Deploy: **Amazon ECS**
 
-- Update [CodeBuild](/docs/amazon/continuous_delivery/codebuild#tạo-buildspec-files)
-```yml title="buildspec.yml"
-version: 0.2
-
-phases:
-  install:
-    runtime-versions:
-      docker: 18
-  pre_build:
-    commands:
-      - echo Logging in to Amazon ECR...
-      - aws --version
-      - aws ecr get-login-password --region your-region | docker login --username AWS --password-stdin account_id.dkr.ecr.your-region.amazonaws.com
-      - REPOSITORY_URI=account_id.dkr.ecr.your-region.amazonaws.com/rails_app
-      - TIME_STAMP=$( date +%s )
-  build:
-    commands:
-      - echo Build started on `date`
-      - echo Building the Docker image...
-      - docker build -t $REPOSITORY_URI:latest .
-      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:v$TIME_STAMP
-  post_build:
-    commands:
-      - echo Build completed on `date`
-      - echo Pushing the Docker images...
-      - docker push $REPOSITORY_URI:v$TIME_STAMP
-      - echo Writing image definitions file...
-      - printf '[{"name":"rails","imageUri":"%s"}]' $REPOSITORY_URI:v$TIME_STAMP > imagedefinitions.json
-artifacts:
-    files: imagedefinitions.json
-```
 
 ### Tạo code pipeline
 - Choose pipeline settings
-
+  - Note policy: **AWSCodeCommitPowerUser**
 ![](https://res.cloudinary.com/ttlcong/image/upload/v1629865029/image-docs/Screen_Shot_2021-08-25_at_11.16.54.png)
 
 - Add source stage

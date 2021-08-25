@@ -4,6 +4,8 @@ sidebar_position: 1
 # CodeCommit
 AWS CodeCommit là dịch vụ quản lý phiên bản source code cho các ứng dụng - version control service. Với dịch vụ này, chúng ta có thể lưu trữ và quản lý các tài nguyên phát triển ứng dụng bao gồm source code, tài liệu, binary files một cách an toàn.
 
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629818834/image-docs/cicd1.png)
+
 ## AWS CodeCommit
 ### Tạo AWS user
 - Tạo một IAM Group với tên **DevOps** và IAM User với tên **Alex**.
@@ -105,9 +107,6 @@ git clone ssh://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/FriendRemin
 ```
 
 ## Simple Notification Service SNS
-
-![](https://res.cloudinary.com/ttlcong/image/upload/v1629818834/image-docs/cicd1.png)
-
 Trong thiết kế trên SNS Topic có hai subcribers:
 - **Email Notification**: gửi email thông báo source code trên main branch đã thay đổi
 - **Lambda**: SNS kích hoạt việc thực thi của AWS Lambda, yêu cầu thực hiện CodeBuild
