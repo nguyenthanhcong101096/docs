@@ -68,31 +68,32 @@ artifacts:
 ```
 
 ### Tạo code pipeline
+- Choose pipeline settings
 
-- Setting
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629865029/image-docs/Screen_Shot_2021-08-25_at_11.16.54.png)
 
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/03220825/017-1-1024x541.png)
+- Add source stage
+  - Source provider: AWS CodeCommit
+  - Repository name: FriendReminders
+  - Branch name: master
+  - Change detection options: Amazon CloudWatch Events
 
-- Source
-
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/03220853/019-1024x560.png)
-
-> Click on Connect to Github and select the repository and the branch like CodeBuild step.
-
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/03220905/020-1024x986.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629865201/image-docs/Screen_Shot_2021-08-25_at_11.19.52.png)
 
 - Build
+  - Build provider: AWS CodeBuild
+  - Project name: FriendRemindersBuild
+  - Build type: Single build
 
-> We will simply select the Codebuild project we have created earlier.
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629865309/image-docs/Screen_Shot_2021-08-25_at_11.21.37.png)
 
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/03220916/021-1024x626.png)
+- Deploy provider: Amazon ECS
+  - Cluster name: friendreminders
+  - Service name: remindersmgt
+  - Image definitions file - optional: imagedefinitions.json
 
-- Deploy
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629865491/image-docs/Screen_Shot_2021-08-25_at_11.24.34.png)
 
-> We will choose Amazon ECS and Deploy provider followed by cluster name and the rails service we have
+- Deploy Thành Công
 
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/03220928/022-1024x696.png)
-
-Now Click on Release Change button to test the whole process.
-
-![](https://s3-ap-southeast-2.amazonaws.com/sal-blog/wp-content/uploads/2020/01/04025930/sweet-726x1024.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629866004/image-docs/Screen_Shot_2021-08-25_at_11.32.31.png)
