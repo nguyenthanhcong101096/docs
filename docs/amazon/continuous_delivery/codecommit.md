@@ -31,15 +31,30 @@ Public key: codecommit_rsa.pub
 ```
 
 ### Cấu hình git sử dụng credential
+<Tabs
+  defaultValue="awscli"
+  values={[
+    { label: 'awscli', value: 'awscli' },
+    { label: 'awsconsole', value: 'awsconsole' },
+  ]
+}>
+<TabItem value="awscli">
+
 - Để sủ dụng SSH keys cho **AWS CodeCommit** với user **Alex**, trong folder `.ssh` sử dụng lệnh:
+
 
 ```
 aws iam upload-ssh-public-key --user-name Alex --ssh-public-key-body file://codecommit_rsa.pub
 ```
+</TabItem>
+<TabItem value="awsconsole">
 
 - Trên AWS Console, IAM -> Users -> Alex -> Security Credentials, chúng ta thấy key mới đã thêm vào (APKA2TUMMYZVRRTWVD62)
 
 ![](https://res.cloudinary.com/ttlcong/image/upload/v1629817832/image-docs/ssh.png)
+
+</TabItem>
+</Tabs>
 
 - Trong folder `.ssh` tạo file mới với tên gọi **config** cùng nội dung
 
