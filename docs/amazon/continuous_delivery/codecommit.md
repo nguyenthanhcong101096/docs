@@ -4,7 +4,7 @@ sidebar_position: 1
 # CodeCommit
 AWS CodeCommit là dịch vụ quản lý phiên bản source code cho các ứng dụng - version control service. Với dịch vụ này, chúng ta có thể lưu trữ và quản lý các tài nguyên phát triển ứng dụng bao gồm source code, tài liệu, binary files một cách an toàn.
 
-## Cài đặt và cấu hình AWS CodeCommit
+## AWS CodeCommit
 ### Tạo AWS user
 - Tạo một IAM Group với tên **DevOps** và IAM User với tên **Alex**.
 
