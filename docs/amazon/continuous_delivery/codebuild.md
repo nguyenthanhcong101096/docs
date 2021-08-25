@@ -88,6 +88,8 @@ Trên AWS Console Developer Tools -> CodeBuild, click button Create build projec
   - Service role: **New select role**
   - Role name: **codebuild-FriendRemindersBuild-service-role**
 
+> Adjustments to Service Role Add role: AmazonEC2ContainerRegistryFullAccess, AmazonECS_FullAccess
+
 ![](https://res.cloudinary.com/ttlcong/image/upload/v1629860590/image-docs/Screen_Shot_2021-08-25_at_10.02.58.png)
 
 - Buildspec:
@@ -111,3 +113,11 @@ Trên AWS Console Developer Tools -> CodeBuild, click button Create build projec
 - Sau khi tạo thành công
 
 ![](https://res.cloudinary.com/ttlcong/image/upload/v1629861427/image-docs/Screen_Shot_2021-08-25_at_10.16.54.png)
+
+- Build Thành công
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629862038/image-docs/Screen_Shot_2021-08-25_at_10.27.03.png)
+
+- Trên AWS Console, `ECR -> Repositories -> remindersmgtservice`, xác nhận Docker Image
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629862107/image-docs/Screen_Shot_2021-08-25_at_10.28.17.png)
