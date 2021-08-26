@@ -1,7 +1,8 @@
 ---
-sidebar_position: 1
+sidebar_position: 3
 ---
-# Overview
+
+# Identity & Access Management
 Identity and Access Management (IAM) là dịch vụ cho phép người dùng quản lý việc truy cập những tài nguyên và dịch vụ trên AWS - AWS Resource
 
 ## Root & IAM User
