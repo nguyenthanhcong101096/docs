@@ -31,7 +31,7 @@ sidebar_position: 2
 
 #### Private subnet
 
-- Auto-assign IPv4: **false**
+- Auto-assign IPv4: **true**
 - IPv4 CIDR block
   - **private-eks-1**: 10.0.1.0/24 ap-southeast-1a
   - **private-eks-2**: 10.0.2.0/24 ap-southeast-1b
@@ -91,7 +91,6 @@ sidebar_position: 2
 
 - Public subnets eks
   - public-subnet-eks-1
-  - public-subnet-eks-2
 
 **Tạo NAT Gateway**
 
@@ -109,13 +108,77 @@ sidebar_position: 2
 
 - Add subnet associations
   - private-subnet-eks-1
-  - private-subnet-eks-2
 
 ![](https://res.cloudinary.com/ttlcong/image/upload/v1629960740/image-docs/Screen_Shot_2021-08-26_at_13.52.11.png)
+
+## Security Groups
+### Cluster Security Groups
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629970009/image-docs/Screen_Shot_2021-08-26_at_16.26.36.png)
+
+### Node Security Groups
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629970463/image-docs/Screen_Shot_2021-08-26_at_16.34.09.png)
 
 ## Amazon EKS cluster
 
 ![](https://res.cloudinary.com/ttlcong/image/upload/v1629960977/image-docs/gsqa3fwwq1my7ijdzk0y.jpg)
 
-### IAM role cluster
-### IAM role node groups
+### EKS IAM Roles
+- Policy
+  - AmazonEKSVPCResourceController
+  - AmazonEKSClusterPolicy
+  - AmazonEKSServicePolicy
+
+- Trust Relationship
+  ```json
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": {
+          "Service": "eks.amazonaws.com"
+        },
+        "Action": "sts:AssumeRole"
+      }
+    ]
+  }
+  ```
+
+- Kết quả
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629965116/image-docs/Screen_Shot_2021-08-26_at_15.04.58.png)
+
+### EKS Node Groups IAM Roles
+- Create Policy EKSAutoScale
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629966191/image-docs/Screen_Shot_2021-08-26_at_15.22.54.png)
+
+- Policy
+  - AmazonEKSWorkerNodePolicy
+  - AmazonEKS_CNI_Policy
+  - AmazonEC2ContainerRegistryReadOnly
+  - EKSAutoScale
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629966027/image-docs/Screen_Shot_2021-08-26_at_15.20.08.png)
+
+### EKS Cluster
+**Create EKS**
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629971516/image-docs/Screen_Shot_2021-08-26_at_16.51.41.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629971762/image-docs/Screen_Shot_2021-08-26_at_16.55.03.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629971886/image-docs/Screen_Shot_2021-08-26_at_16.57.49.png)
+
+**Add Group Node Public**
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629973140/image-docs/Screen_Shot_2021-08-26_at_17.18.47.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629972769/image-docs/Screen_Shot_2021-08-26_at_17.12.35.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629972812/image-docs/Screen_Shot_2021-08-26_at_17.13.11.png)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629972908/image-docs/Screen_Shot_2021-08-26_at_17.14.57.png)
+
+- Group Node Private tương tự ở trên
+
+:::tip
+Add kube config
+
+aws eks --region ap-southeast-1 update-kubeconfig --name my-cluster
+:::
+
+## RDS
