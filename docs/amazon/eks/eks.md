@@ -1,120 +1,121 @@
 ---
-sidebar_position: 6
+sidebar_position: 2
 ---
 
 # Elastic Kubernetes Service
+## Kiến Trúc
 
-## Before you start
-> You will need to make sure you have the following components installed and set up before you start with Amazon EKS:
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629952825/image-docs/bwsdh1un84ymfsan4igv.jpg)
 
-### Install AWS CLI
-```
-# on Unbuntu
-curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
-unzip awscliv2.zip
-sudo ./aws/install
+- VPC sẽ có 8 subnet
+  - 2 public subnet và 2 private subnet Amazon EKS.
+  - 2 public subnet và 2 private subnet Amazon RDS.
+- Internet Gateway gắn với VPC.
+- NAT Gateway được gắn với public subnet EKS, nhưng không gắn trên public subnet RDS vì Amazon RDS không cần truy cập public internet.
+- PostgreSQL RDS nhiều AZ.
 
-# on Mac
-curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg" sudo installer -pkg AWSCLIV2.pkg -target /
-```
+## AWS VPC
 
-**Configure your AWS CLI credentials**
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629957383/image-docs/haaklaqq5hkfxox1wtyj.jpg)
 
-```
-aws configure
-```
+### Tạo VPC
 
-### Install kubectl
-Kubernetes uses the kubectl command-line utility for communicating with the cluster API server
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629957504/image-docs/Screen_Shot_2021-08-26_at_12.58.11.png)
 
-```
-curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.18.8/2020-09-18/bin/linux/amd64/kubectl
-chmod +x ./kubectl
-mv ./kubectl /usr/local/bin
-```
+### Tạo Subnets
 
-### Install eksctl
-```
-# on Ubuntu
-curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-mv /tmp/eksctl /usr/local/bin
+- Two public subnets for high-availability. They will host our External Application Load Balancers created by Amazon EKS and all internet facing Kubernetes workloads.
+- Two private subnets for high-availability. They will host our Internal Application Load Balancers created by Amazon EKS and all internal Kubernetes workloads.
+- (Optional) Two other public subnets for high-availability. They will host our External Network Load Balancers to expose our private RDS PostgreSQL instance.
+- Two other private subnets for high-availability. They will host our Amazon RDS PostgreSQL instance.
 
+#### Private subnet
 
-# on Mac
-brew install weaveworks/tap/eksctl
-```
+- Auto-assign IPv4: **false**
+- IPv4 CIDR block
+  - **private-eks-1**: 10.0.1.0/24 ap-southeast-1a
+  - **private-eks-2**: 10.0.2.0/24 ap-southeast-1b
+  - **private-rds-1**: 10.0.3.0/24 ap-southeast-1a
+  - **private-rds-2**: 10.0.4.0/24 ap-southeast-1b
 
-## Create EKS Cluster by eksctl
-EKS Price
-> you may be charged by following this. The most you should be charged should only be a few dollars, but we're not responsible for any incurred charges.
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629957791/image-docs/Screen_Shot_2021-08-26_at_13.03.00.png)
 
-Amazon Web Services provides three main options for deploying Kubernetes:
+- 3 private subnet tương tự ở trên
 
-- Option 1: Fargate - Linux
-- Option 2: Managed Node - Linux
-- Option 3: Self-Managed Node - Windows
+#### Public subnet
 
-### Create SSH key
-> We will first have to create an SSH key to be able to access the EC2 Node in the Cluster when needed (This is also the best practice that Google recommends)
+- Auto-assign IPv4: **true**
+- IPv4 CIDR block
+  - **public-eks-1**: 10.0.5.0/24 ap-southeast-1a
+  - **public-eks-2**: 10.0.6.0/24 ap-southeast-1b
+  - **public-rds-1**: 10.0.7.0/24 ap-southeast-1a
+  - **public-rds-2**: 10.0.8.0/24 ap-southeast-1b
 
-```
-aws ec2 create-key-pair --key-name k8s-demo --query 'KeyMaterial' --output text> k8s-demo.pem
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629957999/image-docs/Screen_Shot_2021-08-26_at_13.06.29.png)
 
-chmod 400 k8s-demo.pem
-```
+- 3 public subnet tương tự ở trên
 
-### Create EKS Cluster
-```
-eksctl create cluster --name k8s-demo --region ap-northwest-1 --nodegroup-name k8s-demo --nodes 2 --node-type t2.micro --ssh-access --ssh-public-key k8s-demo --managed
-```
+### Internet Gateway
+Để cho phép các **public subnets** ta giao tiếp với internet, chúng ta cần tạo 1 **internet gateway** và liên kết nó với các **public subnets** bằng cách sử dụng **route table**
 
-> AWS CloudFormation để tạo các infrastructure cần thiết và setup Master Node (Control Plane). Khi Master Node đã đi vào hoạt động, thì eksctl sẽ tiếp tục tạo một Node Group để chạy các EC2 Instance. Sau đó các EC2 Instance này sẽ được config và tự động tham gia vào cluster.
+- Tạo Internet Gateway
 
-> Mặc định: eksctl sẽ tạo 2 Worker Node m5.large để tạo EKS Cluster (m5.large khá rẻ và phổ biến)
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629959088/image-docs/Screen_Shot_2021-08-26_at_13.24.32.png)
 
-### Deploy App to EKS Cluster
-- [Document k8s](https://github.com/nguyenthanhcong101096/docs/blob/master/docs/kubernetes.md)
-- [Prepare manifest](https://github.com/nguyenthanhcong101096/learn_kubernetes/tree/master/manifest)
+- Attack tới [VPC](/docs/amazon/eks/eks#tạo-vpc)
 
-### Auto deploy via gitlab-ci
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629959146/image-docs/Screen_Shot_2021-08-26_at_13.25.36.png)
 
-create file `.gitlab-ci.yml`
+### Public Route Table (IGW)
 
-```yml
-variables:
-  REPOSITORY_URL: aws_account_id.dkr.ecr.region.amazonaws.com/demo-app
-  REGION: region
-services:
-- docker:dind
-stages:
-  - build
-  - deploy
-build:
-  stage: build
-  script:
-    - apk add --no-cache curl jq python3 py3-pip
-    - pip install awscli
-    - aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 230470490156.dkr.ecr.ap-southeast-1.amazonaws.com
-    - docker build -t demo-app -f ./Dockerfile .
-    - docker tag demo-app $REPOSITORY_URL.${CI_BUILD_REF}
-    - docker push $REPOSITORY_URL.${CI_BUILD_REF}
-deploy:
-  stage: deploy
-  script:
-    - kubectl set image deployment/server-demo demo-app=$REPOSITORY_URL --record
-  only:
-    - master
-```
+- Tạo route table
 
-### Clear All Resources
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629959318/image-docs/Screen_Shot_2021-08-26_at_13.28.28.png)
 
-```
-# Please remember to delete all the AWS resources you used to avoid fees
-eksctl delete cluster --region=ap-northeast-1 --name=k8s-demo
+- Add route
+  - Destination: **0.0.0.0/0** 
+  - Target: [**igw**](/docs/amazon/eks/eks#internet-gateway)
 
-# delete EC2 KeyPair
-aws ec2 delete-key-pair --key-name k8s-demo
-```
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629959520/image-docs/Screen_Shot_2021-08-26_at_13.31.51.png)
 
-## Reference documents
-[thuc-hanh-set-up-kubernetes-cluster-tren-amazon-web-services](https://viblo.asia/p/thuc-hanh-set-up-kubernetes-cluster-tren-amazon-web-services-elastic-kubernetes-service-Qbq5QQEz5D8)
+- Add subnet associations
+  - public-subnet-eks-1
+  - public-subnet-eks-2
+  - public-subnet-rds-1
+  - public-subnet-rds-2
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629959621/image-docs/Screen_Shot_2021-08-26_at_13.33.31.png)
+
+### NAT Gateway
+Để cho phép private subnets được Amazon EKS sử dụng truy cập internet, chúng ta cần tạo NAT Gateway trên các public subnets được Amazon EKS sử dụng. Chúng tôi liên kết NAT Gateways với private subnets bằng cách sử dụng route table
+
+- Public subnets eks
+  - public-subnet-eks-1
+  - public-subnet-eks-2
+
+**Tạo NAT Gateway**
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629960161/image-docs/Screen_Shot_2021-08-26_at_13.42.13.png)
+
+### Private Route Table (NAT GW)
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629960380/image-docs/Screen_Shot_2021-08-26_at_13.46.08.png)
+
+- Add route
+  - Destination: **0.0.0.0/0** 
+  - Target: [**nat-gw**](/docs/amazon/eks/eks#nat-gateway)
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629960447/image-docs/Screen_Shot_2021-08-26_at_13.47.17.png)
+
+- Add subnet associations
+  - private-subnet-eks-1
+  - private-subnet-eks-2
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629960740/image-docs/Screen_Shot_2021-08-26_at_13.52.11.png)
+
+## Amazon EKS cluster
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1629960977/image-docs/gsqa3fwwq1my7ijdzk0y.jpg)
+
+### IAM role cluster
+### IAM role node groups
