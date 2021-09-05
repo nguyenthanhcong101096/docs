@@ -9,74 +9,78 @@ sidebar_position: 3
 ## Tạo IAM Role
 Để cho phép EC2 có thể thao tác với Cloudwatch, bạn cần tạo 1 IAM Role (mình khuyến khích sử dụng IAM Role thay cho IAM user để đảm bảo security nhé).
 
-- policy: **CloudWatchAgentServerPolicy**
+### Create Policy
 
-![](https://res.cloudinary.com/ttlcong/image/upload/v1629944865/image-docs/Screen_Shot_2021-08-26_at_9.26.49.png)
-
-**Attach Role tới EC2**
-
-![](https://res.cloudinary.com/ttlcong/image/upload/v1629945061/image-docs/Screen_Shot_2021-08-26_at_9.30.39.png)
-
-:::tip
-Thực tế thì chúng ta thường cần collect log của cả 1 autoscale group chẳng hạn, thì mọi người hãy attach nó ở trong launch config hoặc launch template nhé.
-:::
-
-## Cài đặt và Cấu hình AWS Cloudwatch Agent
-:::tip
-Chúng ta sẽ cài đặt trên EC2, với autoscale group thì các bạn nhớ tạo trên 1 ec2 rồi tạo AMI cho autoscale group đó nhé. Yêu cầu đầu tiên là EC2 phải có aws-cli.
-:::
-
-```
-#ubuntu
-wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
-
-sudo dpkg -i -E ./amazon-cloudwatch-agent.deb
-```
-
-```
-# centos
-sudo yum install amazon-cloudwatch-agent
-```
-
-- Tiếp theo sẽ tạo file config, cái mà quyết định bạn sẽ collect folder logs nào. Config file đặt ở
-
-```json title="/opt/aws/amazon-cloudwatch-agent/bin/config.json"
+```json title="CWLogPolicy"
 {
-  "agent": {
-    "run_as_user": "root"
-  },
-  "logs": {
-    "logs_collected": {
-      "files": {
-        "collect_list": [
-          {
-            "file_path": "/var/log/apache2/error.log",
-            "log_group_name": "apache-error-log",
-            "log_stream_name": "{instance_id}"
-          }
-        ]
-      }
-    }
-  }
- }
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams"
+            ],
+            "Resource": ["arn:aws:logs:*:*:*"]
+        }
+    ]
+}
 ```
 
-- **file_path** là path tới file bạn bạn cần collect. 
-- **log_group_name** và **log_stream_name** chính là các namespace được hiển thị trên dịch vụ Cloudwatch Logs
+![](https://res.cloudinary.com/ttlcong/image/upload/v1630817983/image-docs/Screen_Shot_2021-09-05_at_11.59.12.png)
 
+### Create Role
+- Attack policy ở trên
 
-- Cuối cùng để enable việc collect log, chúng ta cần start winzard
+![](https://res.cloudinary.com/ttlcong/image/upload/v1630818347/image-docs/Screen_Shot_2021-09-05_at_12.05.33.png)
+
+---
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1630818424/image-docs/Screen_Shot_2021-09-05_at_12.06.54.png)
+
+### Create EC2
+
+- Attack role ở trên vào instance
+
+![](https://res.cloudinary.com/ttlcong/image/upload/v1630818650/image-docs/Screen_Shot_2021-09-05_at_12.10.24.png)
+
+## Install awslogs
+
+- ssh ec2
 
 ```
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+sudo yum install awslogs
 ```
 
-- Start Agent
+- edit awslogs.conf
+
+```s title="awslogs.conf"
+[/var/log/messages]
+datetime_format = %b %d %H:%M:%S
+file = /var/log/messages
+buffer_duration = 5000
+log_stream_name = {instance_id}
+initial_position = start_of_file
+log_group_name = /var/log/messages
+
+
+[/var/log/nginx/access.log]
+datetime_format = %b %d %H:%M:%S
+file = /var/log/nginx/access.log
+buffer_duration = 5000
+```
+
+- restart awslog
 
 ```
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+sudo systemctl enable awslogsd.service
+sudo systemctl start awslogsd
 ```
 
-## Xem logs
+## Check CloudWatch log
 
-![](https://res.cloudinary.com/ttlcong/image/upload/v1629947113/image-docs/image7.png)
+## Ref
+
+- [AmazonCloudWatch](https://docs.amazonaws.cn/en_us/AmazonCloudWatch/latest/logs/QuickStartEC2Instance.html)
