@@ -174,3 +174,69 @@ update code rails restart rails `./deploy.sh`
 
 
 Truy cập localhost và thấy kết quả
+
+## Run sidekiq on deamon
+cd `/usr/lib/systemd/system`
+touch `sidekiq.service`
+
+```sh
+# /lib/systemd/system/sidekiq.service
+[Unit]
+Description=sidekiq
+After=syslog.target network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/path/to/your/app
+
+# If you use rbenv:
+# ExecStart=/bin/bash -lc 'exec /home/deploy/.rbenv/shims/bundle exec sidekiq -e production'
+# If you use the system's ruby:
+# ExecStart=/usr/local/bin/bundle exec sidekiq -e production
+# If you use rvm in production without gemset and your ruby version is 2.6.5
+# ExecStart=/home/deploy/.rvm/gems/ruby-2.6.5/wrappers/bundle exec sidekiq -e production
+# If you use rvm in production with gemset and your ruby version is 2.6.5
+# ExecStart=/home/deploy/.rvm/gems/ruby-2.6.5@gemset-name/wrappers/bundle exec sidekiq -e production
+# If you use rvm in production with gemset and ruby version/gemset is specified in .ruby-version,
+# .ruby-gemsetor or .rvmrc file in the working directory
+ExecStart=/home/deployer/.rvm/bin/rvm in /path/to/your/app/current do bundle exec sidekiq -e production
+
+User=deployer
+Group=deployer
+UMask=0002
+
+# Greatly reduce Ruby memory fragmentation and heap usage
+# https://www.mikeperham.com/2018/04/25/taming-rails-memory-bloat/
+Environment=MALLOC_ARENA_MAX=2
+
+# if we crash, restart
+RestartSec=1
+Restart=on-failure
+
+# output goes to /var/log/syslog
+StandardOutput=syslog
+StandardError=syslog
+
+# This will default to "bundler" if we don't specify it
+SyslogIdentifier=sidekiq
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Command
+
+```
+# reload serivces
+sudo systemctl daemon-reload
+# enable the sidekiq.service so it will start automatically after rebooting
+sudo systemctl enable sidekiq.service
+# start the sidekiq
+sudo service sidekiq start
+# we can check the log in /var/log/syslog
+sudo cat /var/log/syslog
+# we can check if Sidekiq is started
+sudo ps aux | grep sidekiq
+# or
+sudo systemctl status
+```
