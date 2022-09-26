@@ -240,3 +240,42 @@ sudo ps aux | grep sidekiq
 # or
 sudo systemctl status
 ```
+
+
+## Run puma on deamon
+
+- touch `/lib/systemd/system/puma.service`
+```
+# /lib/systemd/system/puma.service
+[Unit]
+Description=Puma rails server
+After=syslog.target network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/spa
+ExecStart= /root/.rbenv/shims/puma -C /home/spa/config/puma.rb
+#ExecStart=/bin/bash -lc 'exec /root/.rbenv/shims/bundle exec puma -e delevelopment -C /home/spa/config/puma.rb'
+
+User=root
+Group=root
+UMask=0002
+
+# Greatly reduce Ruby memory fragmentation and heap usage
+# https://www.mikeperham.com/2018/04/25/taming-rails-memory-bloat/
+Environment=MALLOC_ARENA_MAX=2
+
+# if we crash, restart
+RestartSec=1
+Restart=on-failure
+
+# output goes to /var/log/syslog
+StandardOutput=/var/log/syslog
+StandardError=/var/log/syslog
+
+# This will default to "bundler" if we don't specify it
+#SyslogIdentifier=sidekiq
+
+[Install]
+WantedBy=multi-user.target
+```
